@@ -118,3 +118,93 @@
 2025-09-07 12:19:31,390 [INFO] Starting download for TSLA at 1d interval...
 2025-09-07 12:19:31,588 [INFO] Downloaded 1258 rows for TSLA (1d)
 2025-09-07 12:19:31,597 [INFO] Data saved to data/raw\TSLA.csv
+2025-09-08 09:03:07,321 [INFO] Starting download for AAPL at 30m interval...
+2025-09-08 09:03:07,748 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:07,748 [ERROR] ['AAPL']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:07,759 [INFO] Downloaded 0 rows for AAPL (30m)
+2025-09-08 09:03:07,759 [WARNING] No data found for AAPL. Skipping.
+2025-09-08 09:03:07,759 [INFO] Starting download for MSFT at 30m interval...
+2025-09-08 09:03:08,632 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:08,633 [ERROR] ['MSFT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:08,635 [INFO] Downloaded 0 rows for MSFT (30m)
+2025-09-08 09:03:08,635 [WARNING] No data found for MSFT. Skipping.
+2025-09-08 09:03:08,635 [INFO] Starting download for AMZN at 30m interval...
+2025-09-08 09:03:08,843 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:08,843 [ERROR] ['AMZN']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:08,845 [INFO] Downloaded 0 rows for AMZN (30m)
+2025-09-08 09:03:08,846 [WARNING] No data found for AMZN. Skipping.
+2025-09-08 09:03:08,846 [INFO] Starting download for JPM at 30m interval...
+2025-09-08 09:03:09,075 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:09,075 [ERROR] ['JPM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:09,077 [INFO] Downloaded 0 rows for JPM (30m)
+2025-09-08 09:03:09,077 [WARNING] No data found for JPM. Skipping.
+2025-09-08 09:03:09,077 [INFO] Starting download for BAC at 30m interval...
+2025-09-08 09:03:09,274 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:09,275 [ERROR] ['BAC']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:09,277 [INFO] Downloaded 0 rows for BAC (30m)
+2025-09-08 09:03:09,277 [WARNING] No data found for BAC. Skipping.
+2025-09-08 09:03:09,277 [INFO] Starting download for XOM at 30m interval...
+2025-09-08 09:03:09,815 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:09,815 [ERROR] ['XOM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:09,818 [INFO] Downloaded 0 rows for XOM (30m)
+2025-09-08 09:03:09,818 [WARNING] No data found for XOM. Skipping.
+2025-09-08 09:03:09,818 [INFO] Starting download for CAT at 30m interval...
+2025-09-08 09:03:10,020 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:10,020 [ERROR] ['CAT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:10,022 [INFO] Downloaded 0 rows for CAT (30m)
+2025-09-08 09:03:10,022 [WARNING] No data found for CAT. Skipping.
+2025-09-08 09:03:10,022 [INFO] Starting download for WMT at 30m interval...
+2025-09-08 09:03:10,274 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:10,275 [ERROR] ['WMT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:10,277 [INFO] Downloaded 0 rows for WMT (30m)
+2025-09-08 09:03:10,277 [WARNING] No data found for WMT. Skipping.
+2025-09-08 09:03:10,277 [INFO] Starting download for KO at 30m interval...
+2025-09-08 09:03:10,788 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:10,789 [ERROR] ['KO']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:10,791 [INFO] Downloaded 0 rows for KO (30m)
+2025-09-08 09:03:10,791 [WARNING] No data found for KO. Skipping.
+2025-09-08 09:03:10,791 [INFO] Starting download for TSLA at 30m interval...
+2025-09-08 09:03:11,076 [ERROR] 
+1 Failed download:
+2025-09-08 09:03:11,077 [ERROR] ['TSLA']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
+2025-09-08 09:03:11,079 [INFO] Downloaded 0 rows for TSLA (30m)
+2025-09-08 09:03:11,079 [WARNING] No data found for TSLA. Skipping.
+2025-09-08 09:05:00,352 [INFO] Starting download for AAPL at 1d interval...
+2025-09-08 09:05:00,787 [INFO] Downloaded 1258 rows for AAPL (1d)
+2025-09-08 09:05:00,801 [INFO] Data saved to data/raw\AAPL.csv
+2025-09-08 09:05:00,801 [INFO] Starting download for MSFT at 1d interval...
+2025-09-08 09:05:00,962 [INFO] Downloaded 1258 rows for MSFT (1d)
+2025-09-08 09:05:00,969 [INFO] Data saved to data/raw\MSFT.csv
+2025-09-08 09:05:00,970 [INFO] Starting download for AMZN at 1d interval...
+2025-09-08 09:05:01,122 [INFO] Downloaded 1258 rows for AMZN (1d)
+2025-09-08 09:05:01,129 [INFO] Data saved to data/raw\AMZN.csv
+2025-09-08 09:05:01,129 [INFO] Starting download for JPM at 1d interval...
+2025-09-08 09:05:01,366 [INFO] Downloaded 1258 rows for JPM (1d)
+2025-09-08 09:05:01,374 [INFO] Data saved to data/raw\JPM.csv
+2025-09-08 09:05:01,374 [INFO] Starting download for BAC at 1d interval...
+2025-09-08 09:05:01,640 [INFO] Downloaded 1258 rows for BAC (1d)
+2025-09-08 09:05:01,647 [INFO] Data saved to data/raw\BAC.csv
+2025-09-08 09:05:01,647 [INFO] Starting download for XOM at 1d interval...
+2025-09-08 09:05:02,049 [INFO] Downloaded 1258 rows for XOM (1d)
+2025-09-08 09:05:02,057 [INFO] Data saved to data/raw\XOM.csv
+2025-09-08 09:05:02,057 [INFO] Starting download for CAT at 1d interval...
+2025-09-08 09:05:02,508 [INFO] Downloaded 1258 rows for CAT (1d)
+2025-09-08 09:05:02,516 [INFO] Data saved to data/raw\CAT.csv
+2025-09-08 09:05:02,516 [INFO] Starting download for WMT at 1d interval...
+2025-09-08 09:05:02,752 [INFO] Downloaded 1258 rows for WMT (1d)
+2025-09-08 09:05:02,759 [INFO] Data saved to data/raw\WMT.csv
+2025-09-08 09:05:02,759 [INFO] Starting download for KO at 1d interval...
+2025-09-08 09:05:03,035 [INFO] Downloaded 1258 rows for KO (1d)
+2025-09-08 09:05:03,042 [INFO] Data saved to data/raw\KO.csv
+2025-09-08 09:05:03,043 [INFO] Starting download for TSLA at 1d interval...
+2025-09-08 09:05:03,233 [INFO] Downloaded 1258 rows for TSLA (1d)
+2025-09-08 09:05:03,240 [INFO] Data saved to data/raw\TSLA.csv

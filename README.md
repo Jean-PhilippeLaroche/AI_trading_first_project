@@ -71,3 +71,7 @@ Or use a small S3 bucket or local NAS share.
 
 Command for multi ticker history price download:
 python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO TSLA --start 2020-01-01 --end 2025-01-01 --interval 30m --output_dir data/raw
+
+--- How top open Tensorboard log files under runs folder: ---
+1. tensorboard --logdir=runs indide project .venv terminal
+2. go to browser and type http://localhost:6006
