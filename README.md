@@ -1,32 +1,4 @@
-How to use on different machines:
-
-1️⃣ Use a config file for paths and settings
-
-Create a config.yaml or config.json in your project root:
-
-data_dir:
-  raw: "data/raw"
-  processed: "data/processed"
-
-logs_dir: "logs"
-
-tickers:
-  - AAPL
-  - MSFT
-  - TSLA
-
-env:
-  window_size: 10
-  initial_balance: 10000
-
-
-Then in your scripts, read paths from this file.
-
-You can create a separate config per machine if needed (config_laptop.yaml, config_desktop.yaml) and just point an environment variable or command-line arg to the correct one.
-
-2️⃣ Use relative paths
-
-Avoid hardcoding absolute paths (like C:/Users/...).
+void hardcoding absolute paths (like C:/Users/...).
 
 Use os.path.join(BASE_DIR, ...) so your project works on any machine.
 
@@ -75,3 +47,10 @@ python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO 
 --- How top open Tensorboard log files under runs folder: ---
 1. tensorboard --logdir=runs indide project .venv terminal
 2. go to browser and type http://localhost:6006
+
+---- TO DO: ----
+1. Add more functionnalites to tensorboard in train.py
+2. Complete evaluate.py using other metrics
+3. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
+4. Complete main.py
+5. Understand the output logic and how to use the model for future predictions
