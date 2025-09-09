@@ -29,6 +29,14 @@ import subprocess
 import webbrowser
 import time
 import platform
+import pandas as pd
+from utils.plot_utils import (
+    plot_signals,
+    plot_price_vs_prediction,
+    plot_portfolio_equity,
+    plot_indicator_overlay,
+    plot_return_distribution
+)
 
 
 def launch_tensorboard(logdir="runs", port=6006):
@@ -291,20 +299,59 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         # Validation
         model.eval()
         val_losses = []
+        y_pred_list, y_true_list = [], []
         with torch.no_grad():
             for batch_X, batch_y in val_loader:
                 batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
                 outputs = model(batch_X)
                 val_loss = criterion(outputs, batch_y)
                 val_losses.append(val_loss.item())
-        avg_val_loss = np.mean(val_losses)
 
-        # TensorBoard logging
+                y_pred_list.append(outputs.detach().cpu())
+                y_true_list.append(batch_y.detach().cpu())
+
+        avg_val_loss = np.mean(val_losses)
+        y_pred = torch.cat(y_pred_list).squeeze()
+        y_val_tensor = torch.cat(y_true_list).squeeze()
+
+        # ---- Enhanced TensorBoard logging ----
         if writer:
+            # Basic losses
             writer.add_scalar("Loss/Train", avg_train_loss, epoch)
             writer.add_scalar("Loss/Val", avg_val_loss, epoch)
 
-        logging.info(f"Epoch {epoch}/{epochs} | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f}")
+            # Episode reward (dummy: difference between predictions and targets)
+            episode_reward = float((y_pred - y_val_tensor).sum().item())
+            writer.add_scalar("Reward/Episode", episode_reward, epoch)
+
+            # Portfolio value (dummy: cumulative sum of targets)
+            portfolio_curve = np.cumsum(y_val_tensor.numpy())
+            portfolio_value = float(portfolio_curve[-1])
+            writer.add_scalar("Portfolio/Value", portfolio_value, epoch)
+
+            # Drawdown (peak-to-trough loss)
+            drawdown = float(np.max(portfolio_curve) - portfolio_curve[-1])
+            writer.add_scalar("Portfolio/Drawdown", drawdown, epoch)
+
+            # Action distribution (dummy: based on threshold 0.5)
+            n_buy = int((y_pred > 0.5).sum().item())
+            n_sell = int((y_pred <= 0.5).sum().item())
+            writer.add_scalar("Actions/Buy", n_buy, epoch)
+            writer.add_scalar("Actions/Sell", n_sell, epoch)
+
+            # Risk-adjusted performance (Sharpe ratio)
+            returns = y_pred.numpy() - y_val_tensor.numpy()
+            sharpe_ratio = float(np.mean(returns) / (np.std(returns) + 1e-8))
+            writer.add_scalar("Risk/SharpeRatio", sharpe_ratio, epoch)
+
+        # Logging to console
+        logging.info(
+            f"Epoch {epoch}/{epochs} | "
+            f"Train Loss: {avg_train_loss:.6f} | "
+            f"Val Loss: {avg_val_loss:.6f} | "
+            f"Sharpe: {sharpe_ratio:.3f} | "
+            f"Reward: {episode_reward:.3f}"
+        )
 
         # Save best model
         if avg_val_loss < best_val_loss:
@@ -320,6 +367,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         # TODO: plot_predictions(model, X_val, y_val)
 
     logging.info("Training complete.")
+
     return model
 
 

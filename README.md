@@ -1,56 +1,44 @@
-void hardcoding absolute paths (like C:/Users/...).
-
-Use os.path.join(BASE_DIR, ...) so your project works on any machine.
-
+--- Path ---
+No hardcoded absolute paths for exporting(like C:/Users/...).
+os.path.join(BASE_DIR, ...) so project works on any machine
 Example:
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DATA_DIR = os.path.join(BASE_DIR, "data/raw")
 
-3️⃣ Environment management
 
-Keep a single Python virtual environment per machine or use conda environments.
+--- Train.py ---
+if __name__ == "__main__" tests run on dummy data
+Useful for visualisation of tensorboard metrics change or training changes
 
+
+--- Environment management ---
 Export dependencies:
-
 pip freeze > requirements.txt
-
-
-On the other machine, install:
-
+On other machines, install:
 pip install -r requirements.txt
 
-4️⃣ Logging & outputs
 
-Keep all logs, models, and outputs inside the project folder (e.g., logs/ or models/).
-
-This avoids changing code when moving between machines.
-
-5️⃣ Version control
-
-Use Git to keep your code synced.
-
-Data is usually not tracked by Git (use .gitignore for data/raw), but scripts, configs, and notebooks are synced automatically.
-
-6️⃣ Optional: Network drive / cloud sync
-
-If you want to run on either machine without moving files manually:
-
-Sync data/ and models/ via OneDrive, Google Drive, or NAS.
-
-Or use a small S3 bucket or local NAS share.
+--- Logging & outputs ---
+All logs, models, and outputs are inside the project folder (e.g., logs/ or models/).
 
 
-Command for multi ticker history price download:
-python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO TSLA --start 2020-01-01 --end 2025-01-01 --interval 30m --output_dir data/raw
+--- Version control ---
+Using Git to keep the code synced.
+Raw data tracked as well for now, small enough
+
+
+--- Command for multi ticker history price download for raw data: ---
+python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO TSLA --start 2020-01-01 --end 2025-01-01 --interval 1d --output_dir data/raw
+
 
 --- How top open Tensorboard log files under runs folder: ---
 1. tensorboard --logdir=runs indide project .venv terminal
 2. go to browser and type http://localhost:6006
+Note: added automatic opening, use manual way if needed shouldn't be the case
+
 
 ---- TO DO: ----
-1. Add more functionnalites to tensorboard in train.py
-2. Complete evaluate.py using other metrics
-3. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
-4. Complete main.py
-5. Understand the output logic and how to use the model for future predictions
+1. Complete evaluate.py using other metrics
+2. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
+3. Complete main.py
+4. Keep on working on the project, add more advanced functionnalities
