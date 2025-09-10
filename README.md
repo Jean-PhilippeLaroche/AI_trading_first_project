@@ -37,6 +37,13 @@ python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO 
 Note: added automatic opening, use manual way if needed shouldn't be the case
 
 
+--- Smoke run for test:
+python main.py --ticker AAPL --epochs 10 --batch 8 --window 10 --train_size 0.7 --threshold 0.05 --balance 10000 --no_viz
+Remove --no_viz for tensorboard and matplotlib graphs
+
+-- Real run example:
+python main.py --ticker AAPL --epochs 20 --batch 16 --window 20 --train_size 0.8 --threshold 0.05 --balance 10000
+
 ---- TO DO: ----
 1. Complete evaluate.py using other metrics
 2. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
