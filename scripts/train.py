@@ -359,12 +359,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
             torch.save(model.state_dict(), checkpoint_path)
             logging.info(f"Best model saved at epoch {epoch} with val_loss {best_val_loss:.6f}")
 
-        # Placeholder: evaluate metrics once evaluate.py is implemented
-        # TODO: metrics = evaluate_model(model, val_loader)
-        # logging.info(f"Validation metrics: {metrics}")
-
-        # Placeholder: plot predictions once plot_utils is implemented
-        # TODO: plot_predictions(model, X_val, y_val)
 
     logging.info("Training complete.")
 

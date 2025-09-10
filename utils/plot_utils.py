@@ -72,7 +72,7 @@ def plot_portfolio_equity(portfolio_values, dates=None):
         portfolio_values (list or np.array): portfolio value at each timestep
         dates (list or np.array): optional dates for x-axis
     """
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(12, 6))
     if dates is None:
         dates = np.arange(len(portfolio_values))
     plt.plot(dates, portfolio_values, label="Portfolio Equity", color="blue")

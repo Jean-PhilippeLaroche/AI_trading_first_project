@@ -186,24 +186,6 @@ class TradingEnv(gym.Env):
             print(f"Price: {float(self.df['Close'].iloc[self.current_step - 1]):.2f}")
             print(f"Cash: {float(self.cash_balance):.2f}, Shares: {self.num_shares}")
             print(f"Portfolio Value: {float(self.portfolio_value):.2f}")
-            # ---------------------------
-
-            # ----- Placeholder: real-time matplotlib plot -----
-            # TODO: Add code to plot price chart + buy/sell markers + portfolio line
-            # Example: self._plot_live()
-            # ---------------------------
-
-            # ----- Placeholder: dashboard/HUD -----
-            # TODO: Add more info overlay (indicators, cumulative rewards, risk metrics)
-            # Example: self._display_hud()
-            # ---------------------------
-
-        elif mode == 'rgb_array':
-            # ----- Placeholder: return frame for video export -----
-            # TODO: Return a numpy array representing the current frame
-            # Example: return self._generate_frame()
-            # ---------------------------
-            pass
 
 if __name__ == "__main__":
     import yfinance as yf
