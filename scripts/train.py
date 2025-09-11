@@ -307,12 +307,12 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
                 val_loss = criterion(outputs, batch_y)
                 val_losses.append(val_loss.item())
 
-                y_pred_list.append(outputs.detach().cpu())
-                y_true_list.append(batch_y.detach().cpu())
+                y_pred_list.append(outputs.detach().cpu().view(-1))
+                y_true_list.append(batch_y.detach().cpu().view(-1))
 
         avg_val_loss = np.mean(val_losses)
-        y_pred = torch.cat(y_pred_list).squeeze()
-        y_val_tensor = torch.cat(y_true_list).squeeze()
+        y_pred = torch.cat(y_pred_list)
+        y_val_tensor = torch.cat(y_true_list)
 
         # ---- Enhanced TensorBoard logging ----
         if writer:

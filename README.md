@@ -44,6 +44,9 @@ Remove --no_viz for tensorboard and matplotlib graphs
 -- Real run example:
 python main.py --ticker AAPL --epochs 20 --batch 16 --window 20 --train_size 0.8 --threshold 0.05 --balance 10000
 
+-- Big run example:
+python main.py --ticker AAPL --epochs 200 --batch 64 --window 60 --train_size 0.9 --threshold 0.02 --balance 100000
+
 ---- TO DO: ----
 1. Complete evaluate.py using other metrics
 2. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
