@@ -1,210 +1,170 @@
-2025-09-07 12:13:21,541 [INFO] Starting download for AAPL at 1d interval...
-2025-09-07 12:13:22,197 [INFO] Downloaded 1258 rows for AAPL (1d)
-2025-09-07 12:13:22,206 [INFO] Data saved to data/raw\AAPL.csv
-2025-09-07 12:13:22,206 [INFO] Starting download for MSFT at 1d interval...
-2025-09-07 12:13:22,506 [INFO] Downloaded 1258 rows for MSFT (1d)
-2025-09-07 12:13:22,513 [INFO] Data saved to data/raw\MSFT.csv
-2025-09-07 12:13:22,514 [INFO] Starting download for AMZN at 1d interval...
-2025-09-07 12:13:22,920 [INFO] Downloaded 1258 rows for AMZN (1d)
-2025-09-07 12:13:22,928 [INFO] Data saved to data/raw\AMZN.csv
-2025-09-07 12:13:22,929 [INFO] Starting download for JPM at 1d interval...
-2025-09-07 12:13:23,269 [INFO] Downloaded 1258 rows for JPM (1d)
-2025-09-07 12:13:23,276 [INFO] Data saved to data/raw\JPM.csv
-2025-09-07 12:13:23,276 [INFO] Starting download for BAC at 1d interval...
-2025-09-07 12:13:23,696 [INFO] Downloaded 1258 rows for BAC (1d)
-2025-09-07 12:13:23,705 [INFO] Data saved to data/raw\BAC.csv
-2025-09-07 12:13:23,706 [INFO] Starting download for XOM at 1d interval...
-2025-09-07 12:13:24,208 [INFO] Downloaded 1258 rows for XOM (1d)
-2025-09-07 12:13:24,216 [INFO] Data saved to data/raw\XOM.csv
-2025-09-07 12:13:24,216 [INFO] Starting download for CAT at 1d interval...
-2025-09-07 12:13:24,712 [INFO] Downloaded 1258 rows for CAT (1d)
-2025-09-07 12:13:24,720 [INFO] Data saved to data/raw\CAT.csv
-2025-09-07 12:13:24,721 [INFO] Starting download for WMT at 1d interval...
-2025-09-07 12:13:25,077 [INFO] Downloaded 1258 rows for WMT (1d)
-2025-09-07 12:13:25,085 [INFO] Data saved to data/raw\WMT.csv
-2025-09-07 12:13:25,085 [INFO] Starting download for KO at 1d interval...
-2025-09-07 12:13:25,503 [INFO] Downloaded 1258 rows for KO (1d)
-2025-09-07 12:13:25,511 [INFO] Data saved to data/raw\KO.csv
-2025-09-07 12:13:25,511 [INFO] Starting download for TSLA at 1d interval...
-2025-09-07 12:13:25,821 [INFO] Downloaded 1258 rows for TSLA (1d)
-2025-09-07 12:13:25,829 [INFO] Data saved to data/raw\TSLA.csv
-2025-09-07 12:17:00,622 [INFO] Starting download for AAPL at 30m interval...
-2025-09-07 12:17:01,177 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:01,178 [ERROR] ['AAPL']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:01,183 [INFO] Downloaded 0 rows for AAPL (30m)
-2025-09-07 12:17:01,183 [WARNING] No data found for AAPL. Skipping.
-2025-09-07 12:17:01,183 [INFO] Starting download for MSFT at 30m interval...
-2025-09-07 12:17:01,530 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:01,531 [ERROR] ['MSFT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:01,534 [INFO] Downloaded 0 rows for MSFT (30m)
-2025-09-07 12:17:01,534 [WARNING] No data found for MSFT. Skipping.
-2025-09-07 12:17:01,534 [INFO] Starting download for AMZN at 30m interval...
-2025-09-07 12:17:01,797 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:01,798 [ERROR] ['AMZN']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:01,801 [INFO] Downloaded 0 rows for AMZN (30m)
-2025-09-07 12:17:01,801 [WARNING] No data found for AMZN. Skipping.
-2025-09-07 12:17:01,801 [INFO] Starting download for JPM at 30m interval...
-2025-09-07 12:17:02,114 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:02,115 [ERROR] ['JPM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:02,117 [INFO] Downloaded 0 rows for JPM (30m)
-2025-09-07 12:17:02,117 [WARNING] No data found for JPM. Skipping.
-2025-09-07 12:17:02,118 [INFO] Starting download for BAC at 30m interval...
-2025-09-07 12:17:02,392 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:02,393 [ERROR] ['BAC']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:02,395 [INFO] Downloaded 0 rows for BAC (30m)
-2025-09-07 12:17:02,396 [WARNING] No data found for BAC. Skipping.
-2025-09-07 12:17:02,396 [INFO] Starting download for XOM at 30m interval...
-2025-09-07 12:17:02,690 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:02,691 [ERROR] ['XOM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:02,694 [INFO] Downloaded 0 rows for XOM (30m)
-2025-09-07 12:17:02,694 [WARNING] No data found for XOM. Skipping.
-2025-09-07 12:17:02,694 [INFO] Starting download for CAT at 30m interval...
-2025-09-07 12:17:02,979 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:02,980 [ERROR] ['CAT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:02,982 [INFO] Downloaded 0 rows for CAT (30m)
-2025-09-07 12:17:02,983 [WARNING] No data found for CAT. Skipping.
-2025-09-07 12:17:02,983 [INFO] Starting download for WMT at 30m interval...
-2025-09-07 12:17:03,318 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:03,319 [ERROR] ['WMT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:03,322 [INFO] Downloaded 0 rows for WMT (30m)
-2025-09-07 12:17:03,322 [WARNING] No data found for WMT. Skipping.
-2025-09-07 12:17:03,322 [INFO] Starting download for KO at 30m interval...
-2025-09-07 12:17:03,618 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:03,618 [ERROR] ['KO']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:03,621 [INFO] Downloaded 0 rows for KO (30m)
-2025-09-07 12:17:03,622 [WARNING] No data found for KO. Skipping.
-2025-09-07 12:17:03,622 [INFO] Starting download for TSLA at 30m interval...
-2025-09-07 12:17:03,950 [ERROR] 
-1 Failed download:
-2025-09-07 12:17:03,951 [ERROR] ['TSLA']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2025-01-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1735707600. The requested range must be within the last 60 days.")')
-2025-09-07 12:17:03,953 [INFO] Downloaded 0 rows for TSLA (30m)
-2025-09-07 12:17:03,954 [WARNING] No data found for TSLA. Skipping.
-2025-09-07 12:19:28,814 [INFO] Starting download for AAPL at 1d interval...
-2025-09-07 12:19:29,345 [INFO] Downloaded 1258 rows for AAPL (1d)
-2025-09-07 12:19:29,354 [INFO] Data saved to data/raw\AAPL.csv
-2025-09-07 12:19:29,354 [INFO] Starting download for MSFT at 1d interval...
-2025-09-07 12:19:29,590 [INFO] Downloaded 1258 rows for MSFT (1d)
-2025-09-07 12:19:29,599 [INFO] Data saved to data/raw\MSFT.csv
-2025-09-07 12:19:29,599 [INFO] Starting download for AMZN at 1d interval...
-2025-09-07 12:19:29,791 [INFO] Downloaded 1258 rows for AMZN (1d)
-2025-09-07 12:19:29,799 [INFO] Data saved to data/raw\AMZN.csv
-2025-09-07 12:19:29,799 [INFO] Starting download for JPM at 1d interval...
-2025-09-07 12:19:30,036 [INFO] Downloaded 1258 rows for JPM (1d)
-2025-09-07 12:19:30,043 [INFO] Data saved to data/raw\JPM.csv
-2025-09-07 12:19:30,044 [INFO] Starting download for BAC at 1d interval...
-2025-09-07 12:19:30,276 [INFO] Downloaded 1258 rows for BAC (1d)
-2025-09-07 12:19:30,283 [INFO] Data saved to data/raw\BAC.csv
-2025-09-07 12:19:30,284 [INFO] Starting download for XOM at 1d interval...
-2025-09-07 12:19:30,555 [INFO] Downloaded 1258 rows for XOM (1d)
-2025-09-07 12:19:30,563 [INFO] Data saved to data/raw\XOM.csv
-2025-09-07 12:19:30,564 [INFO] Starting download for CAT at 1d interval...
-2025-09-07 12:19:30,865 [INFO] Downloaded 1258 rows for CAT (1d)
-2025-09-07 12:19:30,873 [INFO] Data saved to data/raw\CAT.csv
-2025-09-07 12:19:30,874 [INFO] Starting download for WMT at 1d interval...
-2025-09-07 12:19:31,101 [INFO] Downloaded 1258 rows for WMT (1d)
-2025-09-07 12:19:31,109 [INFO] Data saved to data/raw\WMT.csv
-2025-09-07 12:19:31,109 [INFO] Starting download for KO at 1d interval...
-2025-09-07 12:19:31,381 [INFO] Downloaded 1258 rows for KO (1d)
-2025-09-07 12:19:31,390 [INFO] Data saved to data/raw\KO.csv
-2025-09-07 12:19:31,390 [INFO] Starting download for TSLA at 1d interval...
-2025-09-07 12:19:31,588 [INFO] Downloaded 1258 rows for TSLA (1d)
-2025-09-07 12:19:31,597 [INFO] Data saved to data/raw\TSLA.csv
-2025-09-08 09:03:07,321 [INFO] Starting download for AAPL at 30m interval...
-2025-09-08 09:03:07,748 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:07,748 [ERROR] ['AAPL']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:07,759 [INFO] Downloaded 0 rows for AAPL (30m)
-2025-09-08 09:03:07,759 [WARNING] No data found for AAPL. Skipping.
-2025-09-08 09:03:07,759 [INFO] Starting download for MSFT at 30m interval...
-2025-09-08 09:03:08,632 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:08,633 [ERROR] ['MSFT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:08,635 [INFO] Downloaded 0 rows for MSFT (30m)
-2025-09-08 09:03:08,635 [WARNING] No data found for MSFT. Skipping.
-2025-09-08 09:03:08,635 [INFO] Starting download for AMZN at 30m interval...
-2025-09-08 09:03:08,843 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:08,843 [ERROR] ['AMZN']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:08,845 [INFO] Downloaded 0 rows for AMZN (30m)
-2025-09-08 09:03:08,846 [WARNING] No data found for AMZN. Skipping.
-2025-09-08 09:03:08,846 [INFO] Starting download for JPM at 30m interval...
-2025-09-08 09:03:09,075 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:09,075 [ERROR] ['JPM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:09,077 [INFO] Downloaded 0 rows for JPM (30m)
-2025-09-08 09:03:09,077 [WARNING] No data found for JPM. Skipping.
-2025-09-08 09:03:09,077 [INFO] Starting download for BAC at 30m interval...
-2025-09-08 09:03:09,274 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:09,275 [ERROR] ['BAC']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:09,277 [INFO] Downloaded 0 rows for BAC (30m)
-2025-09-08 09:03:09,277 [WARNING] No data found for BAC. Skipping.
-2025-09-08 09:03:09,277 [INFO] Starting download for XOM at 30m interval...
-2025-09-08 09:03:09,815 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:09,815 [ERROR] ['XOM']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:09,818 [INFO] Downloaded 0 rows for XOM (30m)
-2025-09-08 09:03:09,818 [WARNING] No data found for XOM. Skipping.
-2025-09-08 09:03:09,818 [INFO] Starting download for CAT at 30m interval...
-2025-09-08 09:03:10,020 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:10,020 [ERROR] ['CAT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:10,022 [INFO] Downloaded 0 rows for CAT (30m)
-2025-09-08 09:03:10,022 [WARNING] No data found for CAT. Skipping.
-2025-09-08 09:03:10,022 [INFO] Starting download for WMT at 30m interval...
-2025-09-08 09:03:10,274 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:10,275 [ERROR] ['WMT']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:10,277 [INFO] Downloaded 0 rows for WMT (30m)
-2025-09-08 09:03:10,277 [WARNING] No data found for WMT. Skipping.
-2025-09-08 09:03:10,277 [INFO] Starting download for KO at 30m interval...
-2025-09-08 09:03:10,788 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:10,789 [ERROR] ['KO']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:10,791 [INFO] Downloaded 0 rows for KO (30m)
-2025-09-08 09:03:10,791 [WARNING] No data found for KO. Skipping.
-2025-09-08 09:03:10,791 [INFO] Starting download for TSLA at 30m interval...
-2025-09-08 09:03:11,076 [ERROR] 
-1 Failed download:
-2025-09-08 09:03:11,077 [ERROR] ['TSLA']: YFPricesMissingError('possibly delisted; no price data found  (15m 2020-01-01 -> 2020-02-01) (Yahoo error = "15m data not available for startTime=1577854800 and endTime=1580533200. The requested range must be within the last 60 days.")')
-2025-09-08 09:03:11,079 [INFO] Downloaded 0 rows for TSLA (30m)
-2025-09-08 09:03:11,079 [WARNING] No data found for TSLA. Skipping.
-2025-09-08 09:05:00,352 [INFO] Starting download for AAPL at 1d interval...
-2025-09-08 09:05:00,787 [INFO] Downloaded 1258 rows for AAPL (1d)
-2025-09-08 09:05:00,801 [INFO] Data saved to data/raw\AAPL.csv
-2025-09-08 09:05:00,801 [INFO] Starting download for MSFT at 1d interval...
-2025-09-08 09:05:00,962 [INFO] Downloaded 1258 rows for MSFT (1d)
-2025-09-08 09:05:00,969 [INFO] Data saved to data/raw\MSFT.csv
-2025-09-08 09:05:00,970 [INFO] Starting download for AMZN at 1d interval...
-2025-09-08 09:05:01,122 [INFO] Downloaded 1258 rows for AMZN (1d)
-2025-09-08 09:05:01,129 [INFO] Data saved to data/raw\AMZN.csv
-2025-09-08 09:05:01,129 [INFO] Starting download for JPM at 1d interval...
-2025-09-08 09:05:01,366 [INFO] Downloaded 1258 rows for JPM (1d)
-2025-09-08 09:05:01,374 [INFO] Data saved to data/raw\JPM.csv
-2025-09-08 09:05:01,374 [INFO] Starting download for BAC at 1d interval...
-2025-09-08 09:05:01,640 [INFO] Downloaded 1258 rows for BAC (1d)
-2025-09-08 09:05:01,647 [INFO] Data saved to data/raw\BAC.csv
-2025-09-08 09:05:01,647 [INFO] Starting download for XOM at 1d interval...
-2025-09-08 09:05:02,049 [INFO] Downloaded 1258 rows for XOM (1d)
-2025-09-08 09:05:02,057 [INFO] Data saved to data/raw\XOM.csv
-2025-09-08 09:05:02,057 [INFO] Starting download for CAT at 1d interval...
-2025-09-08 09:05:02,508 [INFO] Downloaded 1258 rows for CAT (1d)
-2025-09-08 09:05:02,516 [INFO] Data saved to data/raw\CAT.csv
-2025-09-08 09:05:02,516 [INFO] Starting download for WMT at 1d interval...
-2025-09-08 09:05:02,752 [INFO] Downloaded 1258 rows for WMT (1d)
-2025-09-08 09:05:02,759 [INFO] Data saved to data/raw\WMT.csv
-2025-09-08 09:05:02,759 [INFO] Starting download for KO at 1d interval...
-2025-09-08 09:05:03,035 [INFO] Downloaded 1258 rows for KO (1d)
-2025-09-08 09:05:03,042 [INFO] Data saved to data/raw\KO.csv
-2025-09-08 09:05:03,043 [INFO] Starting download for TSLA at 1d interval...
-2025-09-08 09:05:03,233 [INFO] Downloaded 1258 rows for TSLA (1d)
-2025-09-08 09:05:03,240 [INFO] Data saved to data/raw\TSLA.csv
+2025-11-08 13:29:54,663 [INFO] Starting download for AAPL at 1m interval...
+2025-11-08 13:29:54,663 [INFO] Downloading AAPL data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:29:54,664 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:29:54,664 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:29:56,991 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:29:59,063 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:30:01,169 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:30:03,404 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:30:05,493 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:30:07,754 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:30:09,868 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:30:12,045 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:30:14,250 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:30:16,526 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:30:18,623 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:30:21,071 [INFO] Fetched 600000 rows for AAPL.
+2025-11-08 13:30:23,232 [INFO] Data saved to data/raw\AAPL.csv
+2025-11-08 13:30:42,904 [INFO] Starting download for MSFT at 1m interval...
+2025-11-08 13:30:42,904 [INFO] Downloading MSFT data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:30:42,904 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:30:42,905 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:30:45,367 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:30:47,359 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:30:49,437 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:30:51,548 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:30:53,697 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:30:56,361 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:30:58,328 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:31:00,143 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:31:02,285 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:31:04,510 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:31:06,590 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/MSFT/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:31:08,842 [INFO] Fetched 600000 rows for MSFT.
+2025-11-08 13:31:11,281 [INFO] Data saved to data/raw\MSFT.csv
+2025-11-08 13:31:11,282 [INFO] Starting download for AMZN at 1m interval...
+2025-11-08 13:31:11,282 [INFO] Downloading AMZN data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:31:11,283 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:31:11,283 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:31:13,621 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:31:16,171 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:31:18,272 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:31:20,443 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:31:22,613 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:31:24,528 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:31:26,866 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:31:28,852 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:31:30,856 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:31:33,376 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:31:35,210 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/AMZN/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:31:40,738 [INFO] Fetched 594323 rows for AMZN.
+2025-11-08 13:31:42,976 [INFO] Data saved to data/raw\AMZN.csv
+2025-11-08 13:31:42,980 [INFO] Starting download for JPM at 1m interval...
+2025-11-08 13:31:42,980 [INFO] Downloading JPM data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:31:42,980 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:31:42,980 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:31:45,711 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:31:47,565 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:31:49,526 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:31:51,528 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:31:53,765 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:31:55,887 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:31:57,673 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:31:59,600 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:32:01,669 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:32:03,704 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:32:05,899 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/JPM/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:32:07,653 [INFO] Fetched 573953 rows for JPM.
+2025-11-08 13:32:09,840 [INFO] Data saved to data/raw\JPM.csv
+2025-11-08 13:32:09,843 [INFO] Starting download for BAC at 1m interval...
+2025-11-08 13:32:09,844 [INFO] Downloading BAC data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:32:09,844 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:32:09,844 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:32:12,338 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:32:14,109 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:32:15,854 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:32:17,780 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:32:19,730 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:32:21,295 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:32:23,155 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:32:25,324 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:32:27,288 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:32:29,346 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:32:31,488 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/BAC/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:32:33,518 [INFO] Fetched 598840 rows for BAC.
+2025-11-08 13:32:35,694 [INFO] Data saved to data/raw\BAC.csv
+2025-11-08 13:32:35,697 [INFO] Starting download for XOM at 1m interval...
+2025-11-08 13:32:35,698 [INFO] Downloading XOM data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:32:35,698 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:32:35,698 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:32:37,930 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:32:39,853 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:32:41,836 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:32:43,807 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:32:45,775 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:32:47,892 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:32:50,056 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:32:52,046 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:32:53,846 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:32:55,447 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:32:57,458 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/XOM/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:32:59,672 [INFO] Fetched 591893 rows for XOM.
+2025-11-08 13:33:01,847 [INFO] Data saved to data/raw\XOM.csv
+2025-11-08 13:33:01,850 [INFO] Starting download for CAT at 1m interval...
+2025-11-08 13:33:01,850 [INFO] Downloading CAT data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:33:01,851 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:33:01,851 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:33:04,264 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:33:06,043 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:33:07,825 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:33:09,267 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:33:10,974 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:33:12,578 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:33:14,254 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:33:16,099 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:33:18,134 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:33:19,753 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:33:21,787 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/CAT/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:33:23,717 [INFO] Fetched 513076 rows for CAT.
+2025-11-08 13:33:25,650 [INFO] Data saved to data/raw\CAT.csv
+2025-11-08 13:33:25,653 [INFO] Starting download for WMT at 1m interval...
+2025-11-08 13:33:25,653 [INFO] Downloading WMT data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:33:25,654 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:33:25,654 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:33:28,078 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:33:30,309 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:33:32,201 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:33:33,938 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:33:36,252 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:33:38,014 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:33:40,060 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:33:41,810 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:33:43,767 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:33:45,446 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:33:47,560 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/WMT/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:33:49,657 [INFO] Fetched 568315 rows for WMT.
+2025-11-08 13:33:51,760 [INFO] Data saved to data/raw\WMT.csv
+2025-11-08 13:33:51,763 [INFO] Starting download for KO at 1m interval...
+2025-11-08 13:33:51,763 [INFO] Downloading KO data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:33:51,763 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:33:51,763 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:33:54,340 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:33:55,737 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:33:57,586 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:33:59,306 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:34:01,131 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:34:02,783 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:34:05,100 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:34:06,732 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:34:08,654 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:34:10,981 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:34:12,937 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/KO/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:34:14,655 [INFO] Fetched 575294 rows for KO.
+2025-11-08 13:34:16,747 [INFO] Data saved to data/raw\KO.csv
+2025-11-08 13:34:16,750 [INFO] Starting download for TSLA at 1m interval...
+2025-11-08 13:34:16,750 [INFO] Downloading TSLA data from 2020-11-01 to 2025-11-01 at interval 1m...
+2025-11-08 13:34:16,751 [INFO] Using chunk size ~153 calendar days for multiplier=1 minute
+2025-11-08 13:34:16,751 [INFO] Chunk 1/12: 2020-11-01 -> 2021-04-02  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2020-11-01/2021-04-02
+2025-11-08 13:34:19,333 [INFO] Chunk 2/12: 2021-04-03 -> 2021-09-02  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2021-04-03/2021-09-02
+2025-11-08 13:34:21,682 [INFO] Chunk 3/12: 2021-09-03 -> 2022-02-02  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2021-09-03/2022-02-02
+2025-11-08 13:34:24,087 [INFO] Chunk 4/12: 2022-02-03 -> 2022-07-05  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2022-02-03/2022-07-05
+2025-11-08 13:34:26,617 [INFO] Chunk 5/12: 2022-07-06 -> 2022-12-05  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2022-07-06/2022-12-05
+2025-11-08 13:34:28,934 [INFO] Chunk 6/12: 2022-12-06 -> 2023-05-07  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2022-12-06/2023-05-07
+2025-11-08 13:34:30,987 [INFO] Chunk 7/12: 2023-05-08 -> 2023-10-07  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2023-05-08/2023-10-07
+2025-11-08 13:34:32,977 [INFO] Chunk 8/12: 2023-10-08 -> 2024-03-08  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2023-10-08/2024-03-08
+2025-11-08 13:34:35,213 [INFO] Chunk 9/12: 2024-03-09 -> 2024-08-08  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2024-03-09/2024-08-08
+2025-11-08 13:34:37,245 [INFO] Chunk 10/12: 2024-08-09 -> 2025-01-08  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2024-08-09/2025-01-08
+2025-11-08 13:34:39,192 [INFO] Chunk 11/12: 2025-01-09 -> 2025-06-10  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2025-01-09/2025-06-10
+2025-11-08 13:34:41,735 [INFO] Chunk 12/12: 2025-06-11 -> 2025-11-01  URL: https://api.polygon.io/v2/aggs/ticker/TSLA/range/1/minute/2025-06-11/2025-11-01
+2025-11-08 13:34:43,843 [INFO] Fetched 600000 rows for TSLA.
+2025-11-08 13:34:46,118 [INFO] Data saved to data/raw\TSLA.csv

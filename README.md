@@ -28,7 +28,7 @@ Raw data tracked as well for now, small enough
 
 
 --- Command for multi ticker history price download for raw data: ---
-python scripts/download_data.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO TSLA --start 2020-01-01 --end 2025-01-01 --interval 1d --output_dir data/raw
+python download_data_polygon.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT WMT KO TSLA --start 2020-11-01 --end 2025-11-01 --interval 1m --output_dir data/raw
 
 
 --- How top open Tensorboard log files under runs folder: ---
@@ -46,7 +46,7 @@ python main.py --ticker AAPL --epochs 20 --batch 16 --window 20 --train_size 0.8
 
 -- Big run example:
 python main.py --ticker AAPL --epochs 200 --batch 64 --window 60 --train_size 0.9 --threshold 0.02 --balance 100000
-
+python main.py --ticker AAPL --epochs 200 --batch 16 --window 60 --train_size 0.9 --threshold 0.02 --balance 100000
 ---- TO DO: ----
 1. Complete evaluate.py using other metrics
 2. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
