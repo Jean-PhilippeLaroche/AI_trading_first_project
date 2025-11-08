@@ -75,7 +75,7 @@ def main(
         ticker,
         data_dir=None,
         feature_columns=None,
-        target_column="Close",
+        target_column="close",
         window_size=window_size
     )
     if X is None or y is None:

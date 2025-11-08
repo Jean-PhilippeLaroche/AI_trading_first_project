@@ -31,7 +31,8 @@ def visualize_model_performance(dates, actual_prices, predicted_prices, signals,
     plot_portfolio_equity(portfolio_values, dates)
     if indicators:
         plot_indicator_overlay(actual_prices, indicators, dates)
-    plot_return_distribution(portfolio_values)
+    returns = np.diff(portfolio_values) / portfolio_values[:-1]
+    plot_return_distribution(returns)
     plt.show()
 
 
@@ -68,7 +69,6 @@ def evaluate_model(model, X_val, y_val, device="cpu"):
 # ---- TODOs for future implementation ----
 # 1. Add functionality to log evaluation metrics to TensorBoard
 # 2. Compute additional metrics like Sharpe ratio, max drawdown
-# 3. Generate plots for predictions vs actual using plot_utils
 
 
 
