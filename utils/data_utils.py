@@ -52,7 +52,7 @@ def load_stock_csv(ticker, data_dir=None):
     logging.info(f"Loaded {len(df)} rows for {ticker} from {file_path}")
 
     # Ensure columns we need exist
-    expected_cols = ["Open", "High", "Low", "Close", "Volume"]
+    expected_cols = ["open", "high", "low", "close", "volume"]
     for col in expected_cols:
         if col not in df.columns:
             logging.warning(f"Column {col} missing in {ticker} data")
@@ -60,7 +60,7 @@ def load_stock_csv(ticker, data_dir=None):
     return df
 
 
-def compute_rsi(df, period=14, column="Close"):
+def compute_rsi(df, period=14, column="close"):
     """
     Compute Relative Strength Index (RSI).
 
@@ -72,6 +72,10 @@ def compute_rsi(df, period=14, column="Close"):
     Returns:
         pd.Series: RSI values.
     """
+
+    # copying the dataframe so that it doesn't modify the original one
+    df = df.copy()
+
     if column not in df.columns:
         logging.error(f"{column} not in DataFrame")
         return None
@@ -86,7 +90,7 @@ def compute_rsi(df, period=14, column="Close"):
 # -----------------------------
 # MACD
 # -----------------------------
-def compute_macd(df, column="Close", fast=12, slow=26, signal=9):
+def compute_macd(df, column="close", fast=12, slow=26, signal=9):
     """
     Compute MACD and signal line.
 
@@ -100,6 +104,10 @@ def compute_macd(df, column="Close", fast=12, slow=26, signal=9):
     Returns:
         pd.DataFrame: Columns ['MACD', 'MACD_Signal']
     """
+
+    # copying the dataframe so that it doesn't modify the original one
+    df = df.copy()
+
     if column not in df.columns:
         logging.error(f"{column} not in DataFrame")
         return None
@@ -118,7 +126,7 @@ def compute_macd(df, column="Close", fast=12, slow=26, signal=9):
 # -----------------------------
 # Moving Averages
 # -----------------------------
-def compute_moving_average(df, period=20, column="Close"):
+def compute_moving_average(df, period=20, column="close"):
     """
     Compute Simple Moving Average (SMA).
 
@@ -130,6 +138,10 @@ def compute_moving_average(df, period=20, column="Close"):
     Returns:
         pd.Series: SMA values.
     """
+
+    # copying the dataframe so that it doesn't modify the original one
+    df = df.copy()
+
     if column not in df.columns:
         logging.error(f"{column} not in DataFrame")
         return None
@@ -141,7 +153,7 @@ def compute_moving_average(df, period=20, column="Close"):
     sma = df[column].rolling(window=period).mean()
     return sma
 
-def add_indicators(df, rsi_period=14, macd_fast=12, macd_slow=26, macd_signal=9, sma_period=20, price_column="Close"):
+def add_indicators(df, rsi_period=14, macd_fast=12, macd_slow=26, macd_signal=9, sma_period=20, price_column="close"):
     """
     Add RSI, MACD, and SMA indicators to the DataFrame.
 
@@ -182,7 +194,7 @@ def clean_data(df):
     df = df.copy()
 
     # Forward-fill missing data
-    df.fillna(method="ffill", inplace=True)
+    df = df.ffill()
 
     # Drop remaining NaNs if any
     df.dropna(inplace=True)
@@ -210,7 +222,7 @@ def scale_features(df, feature_columns=None):
     return df, scaler
 
 
-def create_sequences(df, feature_columns, target_column="Close", window_size=20):
+def create_sequences(df, feature_columns, target_column="close", window_size=20):
     """
     Convert DataFrame into sequences for AI training.
 
@@ -236,7 +248,7 @@ def prepare_data_for_ai(
     ticker,
     data_dir=None,
     feature_columns=None,
-    target_column="Close",
+    target_column="close",
     window_size=20,
     rsi_period=14,
     macd_fast=12,
@@ -301,7 +313,7 @@ def prepare_data_for_ai(
 
     # 4. Select features
     if feature_columns is None:
-        feature_columns = ["Close", "RSI", "MACD", "MACD_Signal", "SMA"]
+        feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
         feature_columns = [col for col in feature_columns if col in df.columns]
 
     # 5. Scale
@@ -347,7 +359,7 @@ if __name__ == "__main__":
     # -----------------------------
     # Test 4: Scale features
     # -----------------------------
-    features = ["Close", "RSI", "MACD", "MACD_Signal", "SMA"]
+    features = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
     df_scaled, scaler = scale_features(df_clean, feature_columns=features)
     assert np.all((df_scaled[features] >= 0) & (df_scaled[features] <= 1)), "Scaling failed"
     print("scale_features passed")

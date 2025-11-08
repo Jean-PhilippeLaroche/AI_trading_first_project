@@ -87,9 +87,10 @@ class TradingEnv(gym.Env):
         prices_window = self.df['Close'].iloc[self.current_step - self.window_size:self.current_step].values
         normalized_prices = prices_window.flatten() / prices_window[0]  # ensure 1D
 
-        obs = np.concatenate(
-            (normalized_prices, [self.cash_balance, self.num_shares])
-        ).astype(np.float32)
+        obs = np.concatenate([
+            normalized_prices,
+            np.array([self.cash_balance, self.num_shares], dtype=np.float32)
+        ]).astype(np.float32)
 
         # ----- Optional info dictionary for debugging -----
         info = {
@@ -99,7 +100,7 @@ class TradingEnv(gym.Env):
             'num_shares': self.num_shares
         }
 
-        return obs, info  # Gym reset usually returns just the observation
+        return obs, info
 
     def step(self, action):
         """
@@ -117,22 +118,19 @@ class TradingEnv(gym.Env):
             self.cash_balance -= shares_to_buy * current_price
             self.num_shares += shares_to_buy
 
-            # TODO: Add transaction fees if desired
         elif action == 2:  # Sell
             # Sell all shares
             self.cash_balance += self.num_shares * current_price
             self.num_shares = 0
 
-            # TODO: Add transaction fees if desired
 
         # ----- Update portfolio value -----
         self.portfolio_value = self.cash_balance + self.num_shares * current_price
 
         # ----- Calculate reward -----
-        if len(self.history['portfolio_value']) == 0:
-            reward = 0
-        else:
-            reward = self.portfolio_value - self.history['portfolio_value'][-1]
+        previous_value = self.history['portfolio_value'][-1] if self.history[
+            'portfolio_value'] else self.initial_balance
+        reward = self.portfolio_value - previous_value
 
         # ----- Log history -----
         self.history['step'].append(self.current_step)
@@ -156,7 +154,8 @@ class TradingEnv(gym.Env):
             prices_window = self.df['Close'].iloc[start_idx:self.current_step].values
 
             # Flatten to 1D and normalize prices relative to first in window
-            normalized_prices = prices_window.flatten() / prices_window.flatten()[0]
+            prices_flat = prices_window.flatten()
+            normalized_prices = prices_flat / prices_flat[0]
 
             # Concatenate with cash balance and number of shares
             obs = np.concatenate((
@@ -206,7 +205,7 @@ if __name__ == "__main__":
         env = TradingEnv(df, window_size=10, initial_balance=10000)
 
         # random agent for 1 episode
-        obs = env.reset()
+        obs, info = env.reset()
         done = False
 
         while not done:
