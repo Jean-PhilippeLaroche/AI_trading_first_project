@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # ---------------------------
 # Helper: inverse-scale predictions
 # ---------------------------
-def inverse_scale_close(scaled_values, scaler, feature_columns, target_col="Close"):
+def inverse_scale_close(scaled_values, scaler, feature_columns, target_col="close"):
     """
     Inverse-transform an array of scaled Close values using the MinMax scaler that was fit
     on the feature_columns. Returns values in original price units.
@@ -101,19 +101,22 @@ def main(
         lr=lr,
         writer=writer
     )
+    if model is None:
+        logging.error("Model training failed. Exiting.")
+        return
 
     # close writer
     try:
         writer.close()
-    except Exception:
-        pass
+    except Exception as e:
+        logging.warning(f"Failed to close TensorBoard writer: {e}")
 
     # 5) Evaluate on validation set (returns scaled predictions)
     val_loss, preds_scaled = evaluate_model(model, X_val, y_val, device="cpu")
     logging.info(f"Evaluation complete. Val loss: {val_loss:.6f}")
 
     # 6) Recreate feature_columns (must match prepare_data_for_ai internals)
-    feature_columns = ["Close", "RSI", "MACD", "MACD_Signal", "SMA"]
+    feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
     # only keep those present in the original df (prepare_data_for_ai used same logic)
     # to get df columns we need to load the cleaned df
     df_raw = load_stock_csv(ticker)  # auto-locates data/raw if needed
@@ -127,8 +130,8 @@ def main(
     logging.info(f"Using feature columns for inverse-scaling: {feature_columns}")
 
     # 7) Inverse-scale predictions and validation targets back to price units
-    preds_unscaled = inverse_scale_close(preds_scaled, scaler, feature_columns, target_col="Close")
-    y_val_unscaled = inverse_scale_close(y_val, scaler, feature_columns, target_col="Close")
+    preds_unscaled = inverse_scale_close(preds_scaled, scaler, feature_columns, target_col="close")
+    y_val_unscaled = inverse_scale_close(y_val, scaler, feature_columns, target_col="close")
 
     # 8) Build mapping from sequence index -> original dataframe index
     # When create_sequences produced X,y it used indices: y corresponds to df index i+window_size for i in 0..len(df)-window_size-1
@@ -142,7 +145,7 @@ def main(
 
     # 9) Build trading signals from predictions vs current price
     # current price for each validation step is df_clean['Close'].iloc[idx] (price at timestep)
-    current_prices = df_clean['Close'].iloc[val_seq_indices].values
+    current_prices = df_clean['close'].iloc[val_seq_indices].values
     # decide: buy if predicted > current * (1 + threshold), sell if predicted < current * (1 - threshold)
     signals = np.zeros(len(preds_unscaled), dtype=int)  # -1 sell, 0 hold, 1 buy
     buy_mask = preds_unscaled > current_prices * (1.0 + threshold)
@@ -213,8 +216,9 @@ def main(
                 portfolio_values=np.array(portfolio_values_for_val),
                 indicators=indicators if indicators else None
             )
-        except ValueError:
-            print("Got nparray, expected dict")
+        except Exception as e:
+            logging.error(f"Visualization failed: {e}")
+            logging.exception("Full traceback:")
 
     logging.info("Main pipeline finished.")
 

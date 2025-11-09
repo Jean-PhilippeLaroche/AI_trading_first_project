@@ -42,15 +42,7 @@ import subprocess
 import webbrowser
 import time
 import platform
-import pandas as pd
-from utils.plot_utils import (
-    plot_signals,
-    plot_price_vs_prediction,
-    plot_portfolio_equity,
-    plot_indicator_overlay,
-    plot_return_distribution
-)
-
+import uuid
 
 def launch_tensorboard(logdir="runs", port=6006):
     """
@@ -145,7 +137,7 @@ def get_tensorboard_writer(log_dir="runs"):
         SummaryWriter object
     """
     # Add timestamped subfolder for each run
-    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4().hex[:6]}"
     run_path = f"{log_dir}/run_{timestamp}"
 
     writer = SummaryWriter(log_dir=run_path)
@@ -194,25 +186,6 @@ class StockPredictor(nn.Module):
         out = out[:, -1, :]  # take last time step
         out = self.fc(out)   # map to output
         return out.squeeze(-1)
-
-
-def prepare_dataloader(X, y, batch_size=32, shuffle=True):
-    """
-    Converts numpy arrays to PyTorch DataLoader for training/validation.
-
-    Args:
-        X (np.array): Feature sequences (samples, window, features)
-        y (np.array): Targets (samples,)
-        batch_size (int): Batch size for DataLoader
-        shuffle (bool): Whether to shuffle dataset
-
-    Returns:
-        DataLoader object
-    """
-    X_tensor = torch.tensor(X, dtype=torch.float32)
-    y_tensor = torch.tensor(y, dtype=torch.float32).unsqueeze(-1)  # ensure shape (samples, 1)
-    dataset = TensorDataset(X_tensor, y_tensor)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
 
 # -----------------------------
@@ -295,18 +268,16 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         # Calculate percentage error (scale-independent)
         mape = torch.mean(torch.abs((y_pred - y_val_tensor) / (y_val_tensor + 1e-8))) * 100
 
+        returns = y_pred.numpy() - y_val_tensor.numpy()
+        prediction_error = float(np.mean(returns) / (np.std(returns) + 1e-8))
+
         # ---- Enhanced TensorBoard logging ----
         if writer:
             # Basic losses
             writer.add_scalar("Loss/Train", avg_train_loss, epoch)
             writer.add_scalar("Loss/Val", avg_val_loss, epoch)
             writer.add_scalar("Metrics/MAPE_Percent", mape.item(), epoch)
-
-
-            # Risk-adjusted performance (Sharpe ratio)
-            returns = y_pred.numpy() - y_val_tensor.numpy()
-            prediction_error = float(np.mean(returns) / (np.std(returns) + 1e-8))
-            writer.add_scalar("Prediction Error", prediction_error, epoch)
+            writer.add_scalar("Metrics/PredictionError", prediction_error, epoch)
 
         # Logging to console
         logging.info(
@@ -348,7 +319,7 @@ def run_training_for_ticker(
     data_dir=None,
     window_size=20,
     feature_columns=None,
-    target_column="Close",
+    target_column="close",
     rsi_period=14,
     macd_fast=12,
     macd_slow=26,
@@ -393,12 +364,8 @@ def run_training_for_ticker(
         sma_period=sma_period
     )
 
-    if X is None or y is None:
-        logging.error(f"Data preparation failed for {ticker}. Aborting training.")
-        return None
-
     if X is None or y is None or len(X) == 0:
-        logging.error(f"Invalid data for {ticker}")
+        logging.error(f"Data preparation failed or empty for {ticker}. Aborting training.")
         return None
 
     if len(X) < window_size:
@@ -423,7 +390,8 @@ def run_training_for_ticker(
         epochs=epochs,
         batch_size=batch_size,
         lr=lr,
-        writer=writer
+        writer=writer,
+        scaler=scaler
     )
 
     # Close writer if we created it
@@ -435,7 +403,7 @@ def run_training_for_ticker(
     default_checkpoint = Path("best_model.pth")
     Path(model_dir).mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4().hex[:6]}"
     model_filename = f"{ticker}_model_{timestamp}.pth"
     model_path = Path(model_dir) / model_filename
 
