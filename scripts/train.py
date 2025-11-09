@@ -11,6 +11,19 @@ The training process:
 TODO:
 - Add support for multiple tickers (portfolio-level training).
 - Hyperparameter tuning (grid search, optuna, etc.).
+- Support multiple walk-forward folds (not just one train/val split).
+- Log more than just loss: e.g., metrics like MAE, RMSE, R².
+- Save best model checkpoint to disk when val_loss improves.
+- Integrate wandb for richer experiment tracking if needed.
+- Add more complex architectures: GRU, Transformers.
+- Add multi-horizon forecasting (predict multiple days ahead).
+- Add feature-wise attention / embedding layers for indicators.
+- Support multi-ticker inputs as batch sequences.
+- Support multiple tickers by iterating over a list of tickers
+- Add early stopping
+- Add learning rate scheduler
+- Experiment with more advanced architectures (GRU, Transformer)
+- Integrate evaluation metrics and plotting once evaluate.py / plot_utils are implemented
 """
 
 # -----------------------------
@@ -142,14 +155,6 @@ def get_tensorboard_writer(log_dir="runs"):
 
 
 # -----------------------------
-# TODOs for this block:
-# - Support multiple walk-forward folds (not just one train/val split).
-# - Log more than just loss: e.g., metrics like MAE, RMSE, R².
-# - Save best model checkpoint to disk when val_loss improves.
-# - Integrate wandb for richer experiment tracking if needed.
-# -----------------------------
-
-# -----------------------------
 # Block 3: Model Definition + Dataset Preparation
 # -----------------------------
 
@@ -188,7 +193,7 @@ class StockPredictor(nn.Module):
         out, _ = self.lstm(x, (h0, c0))  # out: (batch, seq_len, hidden_size)
         out = out[:, -1, :]  # take last time step
         out = self.fc(out)   # map to output
-        return out
+        return out.squeeze(-1)
 
 
 def prepare_dataloader(X, y, batch_size=32, shuffle=True):
@@ -211,45 +216,11 @@ def prepare_dataloader(X, y, batch_size=32, shuffle=True):
 
 
 # -----------------------------
-# TODOs for this block:
-# - Add more complex architectures: GRU, Transformers.
-# - Add multi-horizon forecasting (predict multiple days ahead).
-# - Add feature-wise attention / embedding layers for indicators.
-# - Support multi-ticker inputs as batch sequences.
-# -----------------------------
-
-
-# -----------------------------
 # Block 4: Training Loop
 # -----------------------------
-# TODO:
-# - Support multiple tickers by iterating over a list of tickers
-# - Add early stopping
-# - Add learning rate scheduler
-# - Experiment with more advanced architectures (GRU, Transformer)
-# - Integrate evaluation metrics and plotting once evaluate.py / plot_utils are implemented
-
-class LSTMStockPredictor(nn.Module):
-    """
-    Simple LSTM model for stock prediction.
-    Input: sequences of features (RSI, MACD, SMA, etc.)
-    Output: single predicted price value
-    """
-    def __init__(self, input_size, hidden_size=64, num_layers=2):
-        super(LSTMStockPredictor, self).__init__()
-        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
-                            num_layers=num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, 1)
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        out = out[:, -1, :]  # Take last timestep
-        out = self.fc(out)
-        return out.squeeze()
-
 
 def train_model(X_train, y_train, X_val, y_val, input_size,
-                epochs=20, batch_size=16, lr=1e-3, writer=None):
+                epochs=20, batch_size=16, lr=1e-3, writer=None, scaler=None):
     """
     Train the LSTM model with walk-forward validation and TensorBoard logging.
 
@@ -260,11 +231,18 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         batch_size (int)
         lr (float): learning rate
         writer (SummaryWriter): optional TensorBoard writer
+        scaler: to convert back to interpretable values after
 
     Returns:
         model: trained LSTM model
     """
-    model = LSTMStockPredictor(input_size=input_size).to(DEVICE)
+    model = StockPredictor(
+        input_size=input_size,
+        hidden_size=64,
+        num_layers=2,
+        output_size=1,
+        dropout=0.2
+    ).to(DEVICE)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -314,43 +292,29 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         y_pred = torch.cat(y_pred_list)
         y_val_tensor = torch.cat(y_true_list)
 
+        # Calculate percentage error (scale-independent)
+        mape = torch.mean(torch.abs((y_pred - y_val_tensor) / (y_val_tensor + 1e-8))) * 100
+
         # ---- Enhanced TensorBoard logging ----
         if writer:
             # Basic losses
             writer.add_scalar("Loss/Train", avg_train_loss, epoch)
             writer.add_scalar("Loss/Val", avg_val_loss, epoch)
+            writer.add_scalar("Metrics/MAPE_Percent", mape.item(), epoch)
 
-            # Episode reward (dummy: difference between predictions and targets)
-            episode_reward = float((y_pred - y_val_tensor).sum().item())
-            writer.add_scalar("Reward/Episode", episode_reward, epoch)
-
-            # Portfolio value (dummy: cumulative sum of targets)
-            portfolio_curve = np.cumsum(y_val_tensor.numpy())
-            portfolio_value = float(portfolio_curve[-1])
-            writer.add_scalar("Portfolio/Value", portfolio_value, epoch)
-
-            # Drawdown (peak-to-trough loss)
-            drawdown = float(np.max(portfolio_curve) - portfolio_curve[-1])
-            writer.add_scalar("Portfolio/Drawdown", drawdown, epoch)
-
-            # Action distribution (dummy: based on threshold 0.5)
-            n_buy = int((y_pred > 0.5).sum().item())
-            n_sell = int((y_pred <= 0.5).sum().item())
-            writer.add_scalar("Actions/Buy", n_buy, epoch)
-            writer.add_scalar("Actions/Sell", n_sell, epoch)
 
             # Risk-adjusted performance (Sharpe ratio)
             returns = y_pred.numpy() - y_val_tensor.numpy()
-            sharpe_ratio = float(np.mean(returns) / (np.std(returns) + 1e-8))
-            writer.add_scalar("Risk/SharpeRatio", sharpe_ratio, epoch)
+            prediction_error = float(np.mean(returns) / (np.std(returns) + 1e-8))
+            writer.add_scalar("Prediction Error", prediction_error, epoch)
 
         # Logging to console
         logging.info(
             f"Epoch {epoch}/{epochs} | "
             f"Train Loss: {avg_train_loss:.6f} | "
             f"Val Loss: {avg_val_loss:.6f} | "
-            f"Sharpe: {sharpe_ratio:.3f} | "
-            f"Reward: {episode_reward:.3f}"
+            f"Prediction Error: {prediction_error:.3f} | "
+            f"MAPE: {mape:.2f}%"
         )
 
         # Save best model
@@ -362,6 +326,13 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
     logging.info("Training complete.")
 
+    # Load the best model checkpoint before returning
+    if os.path.exists(checkpoint_path):
+        model.load_state_dict(torch.load(checkpoint_path, map_location=DEVICE))
+        logging.info(f"Loaded best model from {checkpoint_path} (val_loss: {best_val_loss:.6f})")
+    else:
+        logging.warning("Checkpoint not found. Returning current model state.")
+
     return model
 
 
@@ -369,7 +340,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 # Block 5: Orchestration / Run training for a ticker
 # -----------------------------
 import shutil
-import joblib  # pip install joblib
+import joblib
 from pathlib import Path
 
 def run_training_for_ticker(
@@ -424,6 +395,14 @@ def run_training_for_ticker(
 
     if X is None or y is None:
         logging.error(f"Data preparation failed for {ticker}. Aborting training.")
+        return None
+
+    if X is None or y is None or len(X) == 0:
+        logging.error(f"Invalid data for {ticker}")
+        return None
+
+    if len(X) < window_size:
+        logging.error(f"Not enough data: need >{window_size}, got {len(X)}")
         return None
 
     # Walk-forward split
