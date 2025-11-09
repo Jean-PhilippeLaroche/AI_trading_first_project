@@ -58,5 +58,5 @@ python main.py --ticker AAPL --epochs 200 --batch 16 --window 60 --train_size 0.
 ---- TO DO: ----
 1. Complete evaluate.py using other metrics
 2. Complete plot_utils with everything I want to include as a tracker, matplotlib lab and etc.
-3. Complete main.py
+3. Add backtesting with the best_model.pth
 4. Keep on working on the project, add more advanced functionnalities
