@@ -12,18 +12,13 @@ TODO:
 - Add support for multiple tickers (portfolio-level training).
 - Hyperparameter tuning (grid search, optuna, etc.).
 - Support multiple walk-forward folds (not just one train/val split).
-- Log more than just loss: e.g., metrics like MAE, RMSE, R².
-- Save best model checkpoint to disk when val_loss improves.
 - Integrate wandb for richer experiment tracking if needed.
 - Add more complex architectures: GRU, Transformers.
 - Add multi-horizon forecasting (predict multiple days ahead).
 - Add feature-wise attention / embedding layers for indicators.
 - Support multi-ticker inputs as batch sequences.
 - Support multiple tickers by iterating over a list of tickers
-- Add early stopping
-- Add learning rate scheduler
 - Experiment with more advanced architectures (GRU, Transformer)
-- Integrate evaluation metrics and plotting once evaluate.py / plot_utils are implemented
 """
 
 # -----------------------------
@@ -43,6 +38,9 @@ import webbrowser
 import time
 import platform
 import uuid
+import shutil
+import joblib
+from pathlib import Path
 
 def launch_tensorboard(logdir="runs", port=6006):
     """
@@ -193,21 +191,26 @@ class StockPredictor(nn.Module):
 # -----------------------------
 
 def train_model(X_train, y_train, X_val, y_val, input_size,
-                epochs=20, batch_size=16, lr=1e-3, writer=None, scaler=None):
+                epochs=20, batch_size=16, lr=1e-3, writer=None, scaler=None,
+                early_stopping_patience=20, lr_scheduler_patience=5, lr_scheduler_factor=0.5):
     """
-    Train the LSTM model with walk-forward validation and TensorBoard logging.
+    Train the LSTM model with walk-forward validation, TensorBoard logging,
+    early stopping, and learning rate scheduling.
 
     Args:
         X_train, y_train, X_val, y_val: numpy arrays
         input_size (int): number of features per timestep
-        epochs (int): number of training epochs
-        batch_size (int)
-        lr (float): learning rate
+        epochs (int): maximum number of training epochs
+        batch_size (int): batch size
+        lr (float): initial learning rate
         writer (SummaryWriter): optional TensorBoard writer
-        scaler: to convert back to interpretable values after
+        scaler: MinMaxScaler for inverse transformation (optional)
+        early_stopping_patience (int): stop if no improvement for N epochs (default: 10)
+        lr_scheduler_patience (int): reduce LR if no improvement for N epochs (default: 5)
+        lr_scheduler_factor (float): factor to reduce LR by (default: 0.5)
 
     Returns:
-        model: trained LSTM model
+        model: trained LSTM model with best weights loaded
     """
     model = StockPredictor(
         input_size=input_size,
@@ -218,6 +221,16 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
     ).to(DEVICE)
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    # Learning Rate Scheduler
+    # Reduces LR when validation loss plateaus
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',  # Minimize validation loss
+        factor=lr_scheduler_factor,  # Multiply LR by this when reducing
+        patience=lr_scheduler_patience,  # Wait N epochs before reducing
+        min_lr=1e-6  # Don't go below this LR
+    )
 
     # Convert data to PyTorch tensors
     train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32),
@@ -231,7 +244,12 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
     best_val_loss = float("inf")
     checkpoint_path = "best_model.pth"
 
+    # Early stopping variables
+    epochs_without_improvement = 0
+    early_stop = False
+
     for epoch in range(1, epochs + 1):
+        # --- Training Phase ---
         model.train()
         train_losses = []
 
@@ -247,7 +265,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
         avg_train_loss = np.mean(train_losses)
 
-        # Validation
+        # --- Validation Phase ---
         model.eval()
         val_losses = []
         y_pred_list, y_true_list = [], []
@@ -268,41 +286,70 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         # Calculate percentage error (scale-independent)
         mape = torch.mean(torch.abs((y_pred - y_val_tensor) / (y_val_tensor + 1e-8))) * 100
 
+        # Calculate prediction error (always, not just for tensorboard)
         returns = y_pred.numpy() - y_val_tensor.numpy()
         prediction_error = float(np.mean(returns) / (np.std(returns) + 1e-8))
 
-        # ---- Enhanced TensorBoard logging ----
+        # --- Learning Rate Scheduling ---
+        # Update scheduler based on validation loss
+        current_lr = optimizer.param_groups[0]['lr']
+        scheduler.step(avg_val_loss)
+        new_lr = optimizer.param_groups[0]['lr']
+
+        # Check if LR was reduced
+        if new_lr < current_lr:
+            logging.info(f"Learning rate reduced: {current_lr:.6f} → {new_lr:.6f}")
+
+        # --- TensorBoard Logging ---
         if writer:
-            # Basic losses
             writer.add_scalar("Loss/Train", avg_train_loss, epoch)
             writer.add_scalar("Loss/Val", avg_val_loss, epoch)
             writer.add_scalar("Metrics/MAPE_Percent", mape.item(), epoch)
             writer.add_scalar("Metrics/PredictionError", prediction_error, epoch)
+            writer.add_scalar("Training/LearningRate", current_lr, epoch)
+            writer.add_scalar("Training/EpochsWithoutImprovement", epochs_without_improvement, epoch)
 
-        # Logging to console
+        # --- Console Logging ---
         logging.info(
             f"Epoch {epoch}/{epochs} | "
             f"Train Loss: {avg_train_loss:.6f} | "
             f"Val Loss: {avg_val_loss:.6f} | "
-            f"Prediction Error: {prediction_error:.3f} | "
-            f"MAPE: {mape:.2f}%"
+            f"MAPE: {mape:.2f}% | "
+            f"LR: {current_lr:.6f}"
         )
 
-        # Save best model
+        # --- Save Best Model & Early Stopping Check ---
         if avg_val_loss < best_val_loss:
+            # Improvement! Reset counter
             best_val_loss = avg_val_loss
+            epochs_without_improvement = 0
             torch.save(model.state_dict(), checkpoint_path)
-            logging.info(f"Best model saved at epoch {epoch} with val_loss {best_val_loss:.6f}")
+            logging.info(f"Best model saved (val_loss: {best_val_loss:.6f})")
+        else:
+            # No improvement
+            epochs_without_improvement += 1
+            logging.info(f"No improvement for {epochs_without_improvement} epoch(s)")
 
+            # Check if we should stop
+            if epochs_without_improvement >= early_stopping_patience:
+                logging.info(f"\n{'=' * 60}")
+                logging.info(f"Early stopping triggered after {epoch} epochs")
+                logging.info(
+                    f"Best validation loss: {best_val_loss:.6f} (at epoch {epoch - epochs_without_improvement})")
+                logging.info(f"{'=' * 60}\n")
+                early_stop = True
+                break
 
-    logging.info("Training complete.")
+    # --- Training Complete ---
+    if not early_stop:
+        logging.info("Training complete.")
 
     # Load the best model checkpoint before returning
     if os.path.exists(checkpoint_path):
         model.load_state_dict(torch.load(checkpoint_path, map_location=DEVICE))
         logging.info(f"Loaded best model from {checkpoint_path} (val_loss: {best_val_loss:.6f})")
     else:
-        logging.warning("Checkpoint not found. Returning current model state.")
+        logging.warning("Checkpoint not found. Returning final epoch model.")
 
     return model
 
@@ -310,9 +357,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 # -----------------------------
 # Block 5: Orchestration / Run training for a ticker
 # -----------------------------
-import shutil
-import joblib
-from pathlib import Path
 
 def run_training_for_ticker(
     ticker,
@@ -329,9 +373,12 @@ def run_training_for_ticker(
     epochs=50,
     batch_size=32,
     lr=1e-3,
+    early_stopping_patience=10,
+    lr_scheduler_patience=5,
+    lr_scheduler_factor=0.5,
     model_dir="models",
     writer=None
-):
+    ):
     """
     High level helper to prepare data for a ticker, run train_model, and save artifacts.
 
@@ -391,7 +438,10 @@ def run_training_for_ticker(
         batch_size=batch_size,
         lr=lr,
         writer=writer,
-        scaler=scaler
+        scaler=scaler,
+        early_stopping_patience = early_stopping_patience,
+        lr_scheduler_patience = lr_scheduler_patience,
+        lr_scheduler_factor = lr_scheduler_factor
     )
 
     # Close writer if we created it
@@ -428,13 +478,6 @@ def run_training_for_ticker(
         logging.error(f"Failed to save scaler: {e}")
         scaler_path = None
 
-    # Placeholder: call evaluate.py once implemented
-    # TODO: from evaluate import evaluate_saved_model
-    # TODO: if model_path: metrics = evaluate_saved_model(model_path, scaler_path, ...)
-
-    # Placeholder: plotting
-    # TODO: from utils.plot_utils import plot_training_results
-    # TODO: plot_training_results(...)
 
     return {
         "model_path": str(model_path) if model_path else None,
@@ -479,7 +522,8 @@ if __name__ == "__main__":
         epochs=5,  # keep short for testing
         batch_size=16,
         lr=1e-3,
-        writer=writer
+        writer=writer,
+        scaler=None
     )
     writer.close()
     logging.info("Dummy training completed.")
