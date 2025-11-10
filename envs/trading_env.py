@@ -84,7 +84,7 @@ class TradingEnv(gym.Env):
         }
 
         # ----- Prepare initial observation -----
-        prices_window = self.df['Close'].iloc[self.current_step - self.window_size:self.current_step].values
+        prices_window = self.df['close'].iloc[self.current_step - self.window_size:self.current_step].values
         normalized_prices = prices_window.flatten() / prices_window[0]  # ensure 1D
 
         obs = np.concatenate([
@@ -95,7 +95,7 @@ class TradingEnv(gym.Env):
         # ----- Optional info dictionary for debugging -----
         info = {
             'portfolio_value': self.portfolio_value,
-            'current_price': float(self.df['Close'].iloc[self.current_step - 1]),
+            'current_price': float(self.df['close'].iloc[self.current_step - 1]),
             'cash_balance': self.cash_balance,
             'num_shares': self.num_shares
         }
@@ -109,7 +109,7 @@ class TradingEnv(gym.Env):
         Returns: observation, reward, done, info
         """
         # ----- Get current price -----
-        current_price = self.df['Close'].iloc[self.current_step]
+        current_price = self.df['close'].iloc[self.current_step]
 
         # ----- Apply action -----
         if action == 1:  # Buy
@@ -151,7 +151,7 @@ class TradingEnv(gym.Env):
             obs = np.zeros(self.window_size + 2, dtype=np.float32)
         else:
             start_idx = max(self.current_step - self.window_size, 0)  # safe slicing
-            prices_window = self.df['Close'].iloc[start_idx:self.current_step].values
+            prices_window = self.df['close'].iloc[start_idx:self.current_step].values
 
             # Flatten to 1D and normalize prices relative to first in window
             prices_flat = prices_window.flatten()
@@ -182,7 +182,7 @@ class TradingEnv(gym.Env):
         if mode == 'human':
             # ----- Simple textual output -----
             print(f"Step: {self.current_step}")
-            print(f"Price: {float(self.df['Close'].iloc[self.current_step - 1]):.2f}")
+            print(f"Price: {float(self.df['close'].iloc[self.current_step - 1]):.2f}")
             print(f"Cash: {float(self.cash_balance):.2f}, Shares: {self.num_shares}")
             print(f"Portfolio Value: {float(self.portfolio_value):.2f}")
 

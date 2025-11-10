@@ -8,19 +8,19 @@ import pandas as pd
 from typing import List, Tuple
 
 # Create logs directory if it doesn't exist
-os.makedirs("logs", exist_ok=True)
+os.makedirs("../logs", exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,  # minimum level to log
     format="%(asctime)s [%(levelname)s] %(message)s",  # how log lines look
     handlers=[
-        logging.FileHandler("logs/download_data.log"),  # write to file
+        logging.FileHandler("../logs/download_data.log"),  # write to file
         logging.StreamHandler()  # also show in console
     ]
 )
 
-POLYGON_API_KEY = "mGtR7xrIGfPapbqKr_iCdSJCYoMR2VX9"
+POLYGON_API_KEY = "Set_custom_API_key"
 if not POLYGON_API_KEY:
     logging.error("Environment variable POLYGON_API_KEY not set. Please set it before running.")
     # We don't exit immediately to allow import-time checking by external tools, but main will exit.
