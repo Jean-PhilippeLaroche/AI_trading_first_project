@@ -223,14 +223,7 @@ class Backtester:
 
     def run(self, start_idx=None, end_idx=None):
         """
-        Run the backtest step-by-step through the data.
-
-        Args:
-            start_idx: Start index (default: window_size)
-            end_idx: End index (default: len(df))
-
-        Returns:
-            dict: Backtest results with portfolio history, trades, and metrics
+        Run the backtest step-by-step through the data, optimized for performance.
         """
         if start_idx is None:
             start_idx = self.window_size
@@ -245,51 +238,65 @@ class Backtester:
         # Reset state
         self.cash = self.initial_balance
         self.shares = 0
-        self.portfolio_history = []
         self.trades = []
+        self.portfolio_history = []
 
+        # ----------------------------------------------------------
+        # Precompute everything heavy ONCE
+        # ----------------------------------------------------------
+        feature_mat = self.scaler.transform(self.df[self.feature_columns])
+        logging.info("Precomputed full scaled feature matrix.")
 
-        # --- Current pipeline, need to add visualization or reduce sample size ---
-        # Step through each day
-        count = 0
-        for i in range(start_idx, end_idx):
-            current_date = self.df.index[i]
-            current_price = self.df.iloc[i]['close']
+        # Build all input windows for model inference
+        X = np.stack([
+            feature_mat[i - self.window_size:i] for i in range(start_idx, end_idx)
+        ])
+        X_tensor = torch.tensor(X, dtype=torch.float32, device=self.device)
 
-            # 1. Predict tomorrow's price (using data up to today)
-            try:
-                predicted_price = self.predict_next_price(i)
-            except Exception as e:
-                logging.warning(f"Prediction failed at index {i}: {e}")
-                predicted_price = current_price  # Fallback to current price
+        # Batch predict
+        logging.info(f"Running model forward pass on {len(X_tensor)} windows...")
+        with torch.no_grad():
+            preds_scaled = self.model(X_tensor).cpu().numpy().flatten()
 
-            # 2. Generate trading signal
+        # Prepare inverse transform template
+        target_idx = 0
+        if "close" in self.feature_columns:
+            target_idx = self.feature_columns.index("close")
+
+        dummy = np.zeros((len(preds_scaled), len(self.feature_columns)))
+        dummy[:, target_idx] = preds_scaled
+        unscaled = self.scaler.inverse_transform(dummy)
+        preds_unscaled = unscaled[:, target_idx]
+
+        # ----------------------------------------------------------
+        # Vectorized prediction list now ready — loop only for trading
+        # ----------------------------------------------------------
+        logging.info("Entering trading simulation loop...")
+
+        dates = self.df.index[start_idx:end_idx]
+        closes = self.df["close"].iloc[start_idx:end_idx].values
+
+        for k, (date, current_price, predicted_price) in enumerate(zip(dates, closes, preds_unscaled)):
             signal = self.generate_signal(predicted_price, current_price)
 
-            # 3. Execute trade if signal is not HOLD
-            if signal in ['BUY', 'SELL']:
-                self.execute_trade(signal, current_price, current_date)
+            if signal in ["BUY", "SELL"]:
+                self.execute_trade(signal, current_price, date)
 
-            # 4. Update portfolio value
-            portfolio_value = self.cash + (self.shares * current_price)
-
+            portfolio_value = self.cash + self.shares * current_price
             self.portfolio_history.append({
-                'date': current_date,
-                'portfolio_value': portfolio_value,
-                'cash': self.cash,
-                'shares': self.shares,
-                'current_price': current_price,
-                'predicted_price': predicted_price,
-                'signal': signal
+                "date": date,
+                "portfolio_value": portfolio_value,
+                "cash": self.cash,
+                "shares": self.shares,
+                "current_price": current_price,
+                "predicted_price": predicted_price,
+                "signal": signal
             })
 
-            # count for vizualisation
-            count += 1
+            if k % 5000 == 0 and k > 0:
+                logging.info(f"Progress: {k}/{len(preds_unscaled)} steps")
 
-            if count % 1000 == 0:
-                logging.info(f"Completed {count} trades out of {end_idx - start_idx}")
-
-        # Calculate final metrics
+        logging.info("Simulation loop complete. Calculating metrics...")
         results = self.calculate_metrics()
 
         logging.info(f"\n{'=' * 60}")
