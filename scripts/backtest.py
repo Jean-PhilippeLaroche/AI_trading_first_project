@@ -20,7 +20,6 @@ import numpy as np
 import pandas as pd
 import logging
 import torch
-from sklearn.preprocessing import MinMaxScaler
 
 logging.basicConfig(level=logging.INFO)
 
