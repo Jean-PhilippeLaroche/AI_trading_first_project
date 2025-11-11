@@ -16,7 +16,7 @@ from utils.data_utils import (
     clean_data
 )
 from scripts.train import train_model, walk_forward_split, get_tensorboard_writer, launch_tensorboard
-from scripts.evaluate import evaluate_model, visualize_model_performance
+from scripts.evaluate import visualize_model_performance
 from scripts.backtest import run_backtest
 
 
@@ -119,12 +119,8 @@ def main(
     # 6) Run proper backtest on validation period
     logging.info("Step 6: Running backtest on validation data...")
 
-    # Calculate validation period indices
-    total_sequences = len(X)
-    split_idx = int(total_sequences * train_size)
-
-    # Validation starts at: window_size + split_idx (in original dataframe)
-    val_start_idx = window_size + split_idx
+    # Validation start and end
+    val_start_idx = int(len(df_clean) * train_size)
     val_end_idx = len(df_clean)
 
     logging.info(f"Backtest period: index {val_start_idx} to {val_end_idx} ({val_end_idx - val_start_idx} days)")

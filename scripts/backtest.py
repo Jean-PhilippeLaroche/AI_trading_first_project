@@ -76,6 +76,10 @@ class Backtester:
         # Set model to evaluation mode
         self.model.eval()
 
+        # Detect which device the model is on
+        self.device = next(self.model.parameters()).device
+        logging.info(f"Backtester initialized with model on device: {self.device}")
+
     def prepare_sequence(self, end_idx):
         """
         Prepare a single sequence for prediction (no lookahead).
@@ -92,13 +96,13 @@ class Backtester:
             raise ValueError(f"Not enough data: need {self.window_size} days, got {end_idx}")
 
         # Extract window of data
-        window_data = self.df.iloc[start_idx:end_idx][self.feature_columns].values
+        window_df = self.df.iloc[start_idx:end_idx][self.feature_columns]
 
         # Scale the data (using pre-fitted scaler)
-        window_scaled = self.scaler.transform(window_data)
+        window_scaled = self.scaler.transform(window_df)
 
         # Convert to tensor with batch dimension: (1, window_size, features)
-        sequence = torch.tensor(window_scaled, dtype=torch.float32).unsqueeze(0)
+        sequence = torch.tensor(window_scaled, dtype=torch.float32).unsqueeze(0).to(self.device)
 
         return sequence
 
@@ -127,9 +131,10 @@ class Backtester:
             target_idx = self.feature_columns.index('close')
 
         dummy[0, target_idx] = prediction_scaled
+        dummy_df = pd.DataFrame(dummy, columns = self.feature_columns)
 
         # Inverse transform
-        unscaled = self.scaler.inverse_transform(dummy)
+        unscaled = self.scaler.inverse_transform(dummy_df)
         predicted_price = unscaled[0, target_idx]
 
         return predicted_price
@@ -243,7 +248,10 @@ class Backtester:
         self.portfolio_history = []
         self.trades = []
 
+
+        # --- Current pipeline, need to add visualization or reduce sample size ---
         # Step through each day
+        count = 0
         for i in range(start_idx, end_idx):
             current_date = self.df.index[i]
             current_price = self.df.iloc[i]['close']
@@ -274,6 +282,12 @@ class Backtester:
                 'predicted_price': predicted_price,
                 'signal': signal
             })
+
+            # count for vizualisation
+            count += 1
+
+            if count % 1000 == 0:
+                logging.info(f"Completed {count} trades out of {end_idx - start_idx}")
 
         # Calculate final metrics
         results = self.calculate_metrics()
