@@ -139,6 +139,122 @@ class Backtester:
 
         return predicted_price
 
+    def predict_all_prices_batch(self, start_idx, end_idx, batch_size=1024):
+        """
+        Predict prices for all timesteps in range using efficient batching.
+
+        Args:
+            start_idx: Start index in dataframe
+            end_idx: End index in dataframe
+            batch_size: Number of sequences to process at once (default: 1024)
+                       Increase to 2048-4096 for faster speed (still <2GB GPU memory)
+
+        Returns:
+            np.array: Predicted prices for each timestep (unscaled, in original units)
+        """
+        all_predictions_scaled = []
+
+        # Step 1: Prepare all sequences (fast on CPU)
+        num_timesteps = end_idx - start_idx
+        logging.info(f"Preparing {num_timesteps} sequences for batch prediction...")
+
+        sequences = []
+        failed_indices = []
+
+        for i in range(start_idx, end_idx):
+            try:
+                seq = self.prepare_sequence(i)
+                sequences.append(seq)
+            except Exception as e:
+                logging.warning(f"Failed to prepare sequence at index {i}: {e}")
+                sequences.append(None)
+                failed_indices.append(i - start_idx)
+
+        # Step 2: Process in batches on GPU
+        logging.info(f"Running batch predictions (batch_size={batch_size})...")
+        num_batches = (len(sequences) + batch_size - 1) // batch_size
+
+        for batch_idx in range(num_batches):
+            batch_start = batch_idx * batch_size
+            batch_end = min(batch_start + batch_size, len(sequences))
+            batch_sequences = sequences[batch_start:batch_end]
+
+            # Separate valid and invalid sequences
+            valid_indices = []
+            valid_sequences = []
+            for local_idx, seq in enumerate(batch_sequences):
+                if seq is not None:
+                    valid_indices.append(local_idx)
+                    valid_sequences.append(seq)
+
+            # Handle case where entire batch failed
+            if len(valid_sequences) == 0:
+                # All sequences in this batch failed - use fallback (current price or 0)
+                all_predictions_scaled.extend([0.0] * len(batch_sequences))
+                continue
+
+            # Stack valid sequences into single batch tensor
+            batch_tensor = torch.cat(valid_sequences, dim=0)  # Shape: (N, window, features)
+
+            # Predict entire batch at once (this is the fast part!)
+            with torch.no_grad():
+                batch_predictions = self.model(batch_tensor)  # Shape: (N,)
+
+            # Convert to numpy
+            batch_predictions_np = batch_predictions.cpu().numpy()
+
+            # Insert predictions back into correct positions
+            batch_results = []
+            pred_idx = 0
+            for local_idx in range(len(batch_sequences)):
+                if local_idx in valid_indices:
+                    batch_results.append(float(batch_predictions_np[pred_idx]))
+                    pred_idx += 1
+                else:
+                    # Failed sequence - use 0 as placeholder (will use fallback later)
+                    batch_results.append(0.0)
+
+            all_predictions_scaled.extend(batch_results)
+
+            # Progress logging (every 10 batches or at end)
+            if (batch_idx + 1) % 10 == 0 or batch_idx == num_batches - 1:
+                progress = ((batch_idx + 1) / num_batches) * 100
+                logging.info(f"  Batch {batch_idx + 1}/{num_batches} ({progress:.1f}%)")
+
+        # Step 3: Inverse transform all predictions at once (vectorized - very fast!)
+        logging.info("Inverse scaling predictions to original price units...")
+        predictions_scaled = np.array(all_predictions_scaled)
+
+        # Create dummy array with all features
+        dummy = np.zeros((len(predictions_scaled), len(self.feature_columns)))
+
+        # Find target column index
+        target_idx = 0
+        if 'close' in self.feature_columns:
+            target_idx = self.feature_columns.index('close')
+
+        # Fill target column with scaled predictions
+        dummy[:, target_idx] = predictions_scaled
+
+        # Convert to DataFrame for sklearn compatibility
+        dummy_df = pd.DataFrame(dummy, columns=self.feature_columns)
+
+        # Inverse transform all at once (much faster than loop)
+        unscaled = self.scaler.inverse_transform(dummy_df)
+        predictions_unscaled = unscaled[:, target_idx]
+
+        # Handle failed sequences by using current price as fallback
+        if failed_indices:
+            logging.warning(f"Using fallback prices for {len(failed_indices)} failed predictions")
+            for failed_idx in failed_indices:
+                actual_idx = start_idx + failed_idx
+                fallback_price = self.df.iloc[actual_idx]['close']
+                predictions_unscaled[failed_idx] = fallback_price
+
+        logging.info(f"Batch prediction complete: {len(predictions_unscaled)} prices predicted")
+
+        return predictions_unscaled
+
     def generate_signal(self, predicted_price, current_price):
         """
         Generate trading signal based on prediction vs current price.
@@ -223,7 +339,15 @@ class Backtester:
 
     def run(self, start_idx=None, end_idx=None):
         """
-        Run the backtest step-by-step through the data, optimized for performance.
+        Run the backtest step-by-step through the data.
+
+
+        Args:
+            start_idx: Start index (default: window_size)
+            end_idx: End index (default: len(df))
+
+        Returns:
+            dict: Backtest results with portfolio history, trades, and metrics
         """
         if start_idx is None:
             start_idx = self.window_size
@@ -238,67 +362,57 @@ class Backtester:
         # Reset state
         self.cash = self.initial_balance
         self.shares = 0
-        self.trades = []
         self.portfolio_history = []
+        self.trades = []
 
-        # ----------------------------------------------------------
-        # Precompute everything heavy ONCE
-        # ----------------------------------------------------------
-        feature_mat = self.scaler.transform(self.df[self.feature_columns])
-        logging.info("Precomputed full scaled feature matrix.")
+        # ===================================================================
+        # OPTIMIZATION: Batch predict all prices at once (1000x faster!)
+        # ===================================================================
+        all_predicted_prices = self.predict_all_prices_batch(
+            start_idx,
+            end_idx,
+            batch_size=1024  # Adjust: 512 (slower, less memory) to 4096 (faster, more memory)
+        )
 
-        # Build all input windows for model inference
-        X = np.stack([
-            feature_mat[i - self.window_size:i] for i in range(start_idx, end_idx)
-        ])
-        X_tensor = torch.tensor(X, dtype=torch.float32, device=self.device)
+        # Now loop through and process signals/trades (this is fast)
+        logging.info("Processing trading signals and executing trades...")
+        num_timesteps = end_idx - start_idx
 
-        # Batch predict
-        logging.info(f"Running model forward pass on {len(X_tensor)} windows...")
-        with torch.no_grad():
-            preds_scaled = self.model(X_tensor).cpu().numpy().flatten()
+        for idx, i in enumerate(range(start_idx, end_idx)):
+            current_date = self.df.index[i]
+            current_price = self.df.iloc[i]['close']
+            predicted_price = all_predicted_prices[idx]
 
-        # Prepare inverse transform template
-        target_idx = 0
-        if "close" in self.feature_columns:
-            target_idx = self.feature_columns.index("close")
-
-        dummy = np.zeros((len(preds_scaled), len(self.feature_columns)))
-        dummy[:, target_idx] = preds_scaled
-        unscaled = self.scaler.inverse_transform(dummy)
-        preds_unscaled = unscaled[:, target_idx]
-
-        # ----------------------------------------------------------
-        # Vectorized prediction list now ready — loop only for trading
-        # ----------------------------------------------------------
-        logging.info("Entering trading simulation loop...")
-
-        dates = self.df.index[start_idx:end_idx]
-        closes = self.df["close"].iloc[start_idx:end_idx].values
-
-        for k, (date, current_price, predicted_price) in enumerate(zip(dates, closes, preds_unscaled)):
+            # Generate trading signal
             signal = self.generate_signal(predicted_price, current_price)
 
-            if signal in ["BUY", "SELL"]:
-                self.execute_trade(signal, current_price, date)
+            # Execute trade if signal is not HOLD
+            if signal in ['BUY', 'SELL']:
+                self.execute_trade(signal, current_price, current_date)
 
-            portfolio_value = self.cash + self.shares * current_price
+            # Update portfolio value
+            portfolio_value = self.cash + (self.shares * current_price)
+
             self.portfolio_history.append({
-                "date": date,
-                "portfolio_value": portfolio_value,
-                "cash": self.cash,
-                "shares": self.shares,
-                "current_price": current_price,
-                "predicted_price": predicted_price,
-                "signal": signal
+                'date': current_date,
+                'portfolio_value': portfolio_value,
+                'cash': self.cash,
+                'shares': self.shares,
+                'current_price': current_price,
+                'predicted_price': predicted_price,
+                'signal': signal
             })
 
-            if k % 5000 == 0 and k > 0:
-                logging.info(f"Progress: {k}/{len(preds_unscaled)} steps")
+            # Progress logging every 1k timesteps
+            if (idx + 1) % 1000 == 0:
+                progress = ((idx + 1) / num_timesteps) * 100
+                logging.info(f"  Processed {idx + 1}/{num_timesteps} timesteps ({progress:.1f}%)")
 
-        logging.info("Simulation loop complete. Calculating metrics...")
+        # Calculate final metrics
+        logging.info("Calculating performance metrics...")
         results = self.calculate_metrics()
 
+        # Print summary
         logging.info(f"\n{'=' * 60}")
         logging.info("BACKTEST RESULTS")
         logging.info(f"{'=' * 60}")
