@@ -189,25 +189,7 @@ class StockPredictor(nn.Module):
 def train_model(X_train, y_train, X_val, y_val, input_size,
                 epochs=20, batch_size=16, lr=1e-3, writer=None, scaler=None,
                 early_stopping_patience=20, lr_scheduler_patience=5, lr_scheduler_factor=0.5):
-    """
-    Train the LSTM model with walk-forward validation, TensorBoard logging,
-    early stopping, and learning rate scheduling.
 
-    Args:
-        X_train, y_train, X_val, y_val: numpy arrays
-        input_size (int): number of features per timestep
-        epochs (int): maximum number of training epochs
-        batch_size (int): batch size
-        lr (float): initial learning rate
-        writer (SummaryWriter): optional TensorBoard writer
-        scaler: MinMaxScaler for inverse transformation (optional)
-        early_stopping_patience (int): stop if no improvement for N epochs (default: 10)
-        lr_scheduler_patience (int): reduce LR if no improvement for N epochs (default: 5)
-        lr_scheduler_factor (float): factor to reduce LR by (default: 0.5)
-
-    Returns:
-        model: trained LSTM model with best weights loaded
-    """
     model = StockPredictor(
         input_size=input_size,
         hidden_size=64,
@@ -215,56 +197,116 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         output_size=1,
         dropout=0.2
     ).to(DEVICE)
+
+
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    # Learning Rate Scheduler
-    # Reduces LR when validation loss plateaus
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode='min',  # Minimize validation loss
-        factor=lr_scheduler_factor,  # Multiply LR by this when reducing
-        patience=lr_scheduler_patience,  # Wait N epochs before reducing
-        min_lr=1e-6  # Don't go below this LR
+        optimizer, mode='min', factor=lr_scheduler_factor,
+        patience=lr_scheduler_patience, min_lr=1e-6
     )
 
-    # Convert data to PyTorch tensors
+    # Dataset & DataLoader
     train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32),
                                   torch.tensor(y_train, dtype=torch.float32))
     val_dataset = TensorDataset(torch.tensor(X_val, dtype=torch.float32),
                                 torch.tensor(y_val, dtype=torch.float32))
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
     best_val_loss = float("inf")
     checkpoint_path = "best_model.pth"
-
-    # Early stopping variables
     epochs_without_improvement = 0
-    early_stop = False
+
+    # -----------------------
+    # PROFILING DATA STORAGE
+    # -----------------------
+    epoch_times = []
+    train_loop_times = []
+    val_loop_times = []
+    batch_load_times = []
+    forward_times = []
+    backward_times = []
+    optimizer_times = []
+
+    print("\n=== TRAINING PROFILER ===")
 
     for epoch in range(1, epochs + 1):
-        # --- Training Phase ---
+        epoch_start = time.time()
+
+        # --------------------------
+        # TRAINING LOOP
+        # --------------------------
         model.train()
         train_losses = []
 
-        for batch_X, batch_y in train_loader:
-            batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
+        train_loop_start = time.time()
 
-            optimizer.zero_grad()
+        # Per-epoch temporary accumulators
+        ep_batch_load = 0.0
+        ep_forward = 0.0
+        ep_backward = 0.0
+        ep_optimizer = 0.0
+
+        for batch_X, batch_y in train_loader:
+
+            t0 = time.time()
+            batch_load_start = time.time()
+            batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
+            batch_load_times.append(time.time() - batch_load_start)
+
+            load_time = time.time() - t0
+            ep_batch_load += load_time
+
+            # Forward pass
+            t0 = time.time()
+            fwd_start = time.time()
             outputs = model(batch_X)
+            forward_times.append(time.time() - fwd_start)
+
+            fwd_time = time.time() - t0
+            ep_forward += fwd_time
+
             loss = criterion(outputs, batch_y)
+
+            # Backward pass
+            t0 = time.time()
+            bwd_start = time.time()
             loss.backward()
+            backward_times.append(time.time() - bwd_start)
+
+            bwd_time = time.time() - t0
+            ep_backward += bwd_time
+
+            # Optimizer
+            t0 = time.time()
+            opt_start = time.time()
             optimizer.step()
+            optimizer.zero_grad()
+            optimizer_times.append(time.time() - opt_start)
+
+            opt_time = time.time() - t0
+            ep_optimizer += opt_time
+
             train_losses.append(loss.item())
 
-        avg_train_loss = np.mean(train_losses)
 
-        # --- Validation Phase ---
+        train_loop_times.append(time.time() - train_loop_start)
+
+        batch_load_times.append(ep_batch_load)
+        forward_times.append(ep_forward)
+        backward_times.append(ep_backward)
+        optimizer_times.append(ep_optimizer)
+
+        # --------------------------
+        # VALIDATION LOOP
+        # --------------------------
         model.eval()
+        val_loop_start = time.time()
         val_losses = []
-        y_pred_list, y_true_list = [], []
+
         with torch.no_grad():
             for batch_X, batch_y in val_loader:
                 batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
@@ -272,80 +314,64 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
                 val_loss = criterion(outputs, batch_y)
                 val_losses.append(val_loss.item())
 
-                y_pred_list.append(outputs.detach().cpu().view(-1))
-                y_true_list.append(batch_y.detach().cpu().view(-1))
+        val_loop_times.append(time.time() - val_loop_start)
 
+        avg_train_loss = np.mean(train_losses)
         avg_val_loss = np.mean(val_losses)
-        y_pred = torch.cat(y_pred_list)
-        y_val_tensor = torch.cat(y_true_list)
 
-        # Calculate percentage error (scale-independent)
-        mape = torch.mean(torch.abs((y_pred - y_val_tensor) / (y_val_tensor + 1e-8))) * 100
-
-        # Calculate prediction error (always, not just for tensorboard)
-        returns = y_pred.numpy() - y_val_tensor.numpy()
-        prediction_error = float(np.mean(returns) / (np.std(returns) + 1e-8))
-
-        # --- Learning Rate Scheduling ---
-        # Update scheduler based on validation loss
-        current_lr = optimizer.param_groups[0]['lr']
         scheduler.step(avg_val_loss)
-        new_lr = optimizer.param_groups[0]['lr']
 
-        # Check if LR was reduced
-        if new_lr < current_lr:
-            logging.info(f"Learning rate reduced: {current_lr:.6f} → {new_lr:.6f}")
+        epoch_times.append(time.time() - epoch_start)
 
-        # --- TensorBoard Logging ---
-        if writer:
-            writer.add_scalar("Loss/Train", avg_train_loss, epoch)
-            writer.add_scalar("Loss/Val", avg_val_loss, epoch)
-            writer.add_scalar("Metrics/MAPE_Percent", mape.item(), epoch)
-            writer.add_scalar("Metrics/PredictionError", prediction_error, epoch)
-            writer.add_scalar("Training/LearningRate", current_lr, epoch)
-            writer.add_scalar("Training/EpochsWithoutImprovement", epochs_without_improvement, epoch)
+        # --------------------------
+        # LOGGING
+        # --------------------------
+        print(f"\nEpoch {epoch}/{epochs}")
+        print(f"  Train Loop: {train_loop_times[-1]:.3f}s")
+        print(f"    Batch loading: {ep_batch_load:.2f}s")
+        print(f"    Forward pass : {ep_forward:.2f}s")
+        print(f"    Backward pass: {ep_backward:.2f}s")
+        print(f"    Optimizer    : {ep_optimizer:.2f}s")
+        print(f"  Validation Loop:   {val_loop_times[-1]:.3f}s")
+        print(f"  Total:      {epoch_times[-1]:.3f}s")
+        print(f"  Loss:       {avg_train_loss:.6f} (train), {avg_val_loss:.6f} (val)")
 
-        # --- Console Logging ---
-        logging.info(
-            f"Epoch {epoch}/{epochs} | "
-            f"Train Loss: {avg_train_loss:.6f} | "
-            f"Val Loss: {avg_val_loss:.6f} | "
-            f"MAPE: {mape:.2f}% | "
-            f"LR: {current_lr:.6f}"
-        )
-
-        # --- Save Best Model & Early Stopping Check ---
+        # --------------------------
+        # Early Stopping
+        # --------------------------
         if avg_val_loss < best_val_loss:
-            # Improvement! Reset counter
+            torch.save(model.state_dict(), checkpoint_path)
             best_val_loss = avg_val_loss
             epochs_without_improvement = 0
-            torch.save(model.state_dict(), checkpoint_path)
-            logging.info(f"Best model saved (val_loss: {best_val_loss:.6f})")
         else:
-            # No improvement
             epochs_without_improvement += 1
-            logging.info(f"No improvement for {epochs_without_improvement} epoch(s)")
-
-            # Check if we should stop
             if epochs_without_improvement >= early_stopping_patience:
-                logging.info(f"\n{'=' * 60}")
-                logging.info(f"Early stopping triggered after {epoch} epochs")
-                logging.info(
-                    f"Best validation loss: {best_val_loss:.6f} (at epoch {epoch - epochs_without_improvement})")
-                logging.info(f"{'=' * 60}\n")
-                early_stop = True
+                print(f"\nEarly stopping triggered after {epochs_without_improvement} epochs without improvements")
                 break
 
-    # --- Training Complete ---
-    if not early_stop:
-        logging.info("Training complete.")
+    # --------------------------
+    # FINAL PROFILING SUMMARY
+    # --------------------------
+    print("\n=== TRAINING PROFILING SUMMARY ===")
+    print(f"Epoch avg time:     {np.mean(epoch_times):.3f}s")
+    print(f"Train loop avg:     {np.mean(train_loop_times):.3f}s")
+    print(f"Val loop avg:       {np.mean(val_loop_times):.3f}s")
 
-    # Load the best model checkpoint before returning
-    if os.path.exists(checkpoint_path):
-        model.load_state_dict(torch.load(checkpoint_path, map_location=DEVICE))
-        logging.info(f"Loaded best model from {checkpoint_path} (val_loss: {best_val_loss:.6f})")
-    else:
-        logging.warning("Checkpoint not found. Returning final epoch model.")
+    print("\n--- Batch timings ---")
+    print(f"Avg batch load:     {np.mean(batch_load_times):.6f}s")
+    print(f"Avg forward pass:   {np.mean(forward_times):.6f}s")
+    print(f"Avg backward pass:  {np.mean(backward_times):.6f}s")
+    print(f"Avg optimizer step: {np.mean(optimizer_times):.6f}s")
+
+    print("\n--- Bottleneck Hint ---")
+    if np.mean(forward_times) > np.mean(backward_times) * 1.5:
+        print("Forward pass is slow → model too big, window too large, or GPU underutilized.")
+    if np.mean(batch_load_times) > np.mean(forward_times):
+        print("DataLoader is the bottleneck → num_workers, pin_memory.")
+    if np.mean(backward_times) > np.mean(forward_times) * 1.5:
+        print("Backward pass dominates → reduce hidden size or num_layers.")
+    if np.mean(optimizer_times) > 0.5 * np.mean(backward_times):
+        print("Optimizer overhead → switch to fused/AdamW, or larger batch size.")
 
     return model
 
