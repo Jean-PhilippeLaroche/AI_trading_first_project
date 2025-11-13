@@ -545,28 +545,203 @@ def run_backtest(model, scaler, df, feature_columns, window_size=60,
     return backtester.run(start_idx=start_idx, end_idx=end_idx)
 
 
+
+
 # ---------------------------
 # Example usage / testing
 # ---------------------------
 if __name__ == "__main__":
-    print("backtest.py loaded successfully!")
-    print("\nUsage example:")
-    print("""
-    from backtest import run_backtest
 
-    results = run_backtest(
-        model=trained_model,
-        scaler=fitted_scaler,
-        df=cleaned_dataframe,
-        feature_columns=['close', 'RSI', 'MACD', 'MACD_Signal', 'SMA'],
-        window_size=60,
-        initial_balance=10000,
-        transaction_cost_pct=0.02,  # 2% total cost
-        threshold=0.01               # 1% signal threshold
+    import time
+    import json
+    import logging
+    import torch
+    import torch.nn as nn
+    from sklearn.preprocessing import MinMaxScaler
+    from utils.data_utils import load_stock_csv, add_indicators, clean_data
+
+    logging.basicConfig(level=logging.INFO)
+
+    # -------------------
+    # Config for the test
+    # -------------------
+    ticker = "AAPL"
+    train_size = 0.8
+    window_size = 60
+
+    initial_balance = 10_000
+    transaction_cost = 0.02  # 2%
+    threshold = 0.01  # 1%
+    epochs = 0  # just for the summary JSON
+
+    logging.info("Step 1: Loading and preparing full dataframe...")
+    df_raw = load_stock_csv(ticker)
+    if df_raw is None:
+        logging.error("Could not load raw CSV for ticker; exiting.")
+        raise SystemExit(1)
+
+    df_ind = add_indicators(df_raw)
+    df_clean = clean_data(df_ind)
+
+    n_total = len(df_clean)
+    split_idx = int(n_total * train_size)
+    logging.info(f"Total cleaned rows: {n_total}, train/val split index: {split_idx}")
+
+    # -------------------
+    # Feature columns
+    # -------------------
+    feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
+    feature_columns = [c for c in feature_columns if c in df_clean.columns]
+    logging.info(f"Using feature columns: {feature_columns}")
+
+    # -------------------
+    # Fit scaler on TRAIN slice only (no leakage)
+    # -------------------
+    train_df = df_clean.iloc[:split_idx]
+    scaler = MinMaxScaler()
+    scaler.fit(train_df[feature_columns])
+
+
+    # -------------------
+    # Simple dummy PyTorch model for testing backtest logic
+    # -------------------
+    class OscillatingModel(nn.Module):
+        """
+        Oscillating model in *scaled* close space.
+
+        - Takes (batch, window, features)
+        - Uses the last timestep's scaled 'close' as base prediction
+        - Adds an oscillating offset in scaled space: +delta, -delta, +delta, -delta, ...
+          so that after inverse-scaling we get prices clearly above/below current,
+          forcing BUY/SELL signals.
+        """
+
+        def __init__(self, input_size: int, close_idx: int = 0, delta_scaled: float = 0.05):
+            super().__init__()
+            self.close_idx = close_idx
+            self.delta_scaled = delta_scaled  # in [0,1] scaling units
+            # Keep a tiny linear layer just to mimic your original structure, but unused
+            self.fc = nn.Linear(input_size, 1)
+
+        def forward(self, x):
+            # x shape: (batch, window, features)
+            last_step = x[:, -1, :]  # (batch, features)
+
+            # Use scaled 'close' as base prediction
+            base_scaled = last_step[:, self.close_idx]  # (batch,)
+
+            # Create an oscillating offset in scaled space: +delta, -delta, +delta, ...
+            batch_size = x.size(0)
+            device = x.device
+            dtype = x.dtype
+
+            # +delta for even indices, -delta for odd
+            signs = torch.tensor(
+                [1.0 if i % 2 == 0 else -1.0 for i in range(batch_size)],
+                device=device,
+                dtype=dtype
+            )
+
+            offset = signs * self.delta_scaled  # (batch,)
+
+            # Add offset to base scaled close
+            pred_scaled = base_scaled + offset
+
+            # Optional: clamp to valid scaler range [0, 1]
+            pred_scaled = torch.clamp(pred_scaled, 0.0, 1.0)
+
+            return pred_scaled  # (batch,)
+
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = OscillatingModel(input_size=len(feature_columns)).to(device)
+    model.eval()
+
+    # -------------------
+    # Backtest on validation slice
+    # -------------------
+    logging.info("Step 6: Running backtest on validation slice of df_clean...")
+
+    # Ensure we have enough history to build a full window
+    val_start_idx = split_idx + window_size
+    val_end_idx = n_total
+    if val_start_idx >= val_end_idx:
+        raise ValueError(
+            f"Not enough data for backtest: val_start_idx={val_start_idx}, "
+            f"val_end_idx={val_end_idx}"
+        )
+
+    logging.info(
+        f"Backtest period: index {val_start_idx} to {val_end_idx} "
+        f"({val_end_idx - val_start_idx} days)"
     )
 
-    print(f"Total Return: {results['total_return']:.2f}%")
-    print(f"Expected Return: {results['expected_return']:.4f}%")
-    print(f"Sharpe Ratio: {results['sharpe_ratio']:.3f}")
-    print(f"Max Drawdown: {results['max_drawdown']:.2f}%")
-    """)
+    t0 = time.time()
+    backtest_results = run_backtest(
+        model=model,
+        scaler=scaler,
+        df=df_clean,
+        feature_columns=feature_columns,
+        window_size=window_size,
+        initial_balance=initial_balance,
+        transaction_cost_pct=transaction_cost,
+        threshold=threshold,
+        start_idx=val_start_idx,
+        end_idx=val_end_idx
+    )
+    logging.info(f"Backtest finished in {time.time() - t0:.2f}s")
+
+    # -------------------
+    # Step 7: Prepare visualization data
+    # -------------------
+    logging.info("Step 7: Preparing visualization data...")
+    portfolio_history = backtest_results['portfolio_history']
+
+    val_dates = portfolio_history['date'].values
+    actual_prices = portfolio_history['current_price'].values
+    predicted_prices = portfolio_history['predicted_price'].values
+
+    signal_map = {'BUY': 1, 'HOLD': 0, 'SELL': -1}
+    signals = portfolio_history['signal'].map(signal_map).values
+
+    portfolio_values = portfolio_history['portfolio_value'].values
+
+    indicators = {}
+    for ind in ["SMA", "RSI", "MACD", "MACD_Signal"]:
+        if ind in df_clean.columns:
+            indicators[ind] = df_clean[ind].iloc[val_start_idx:val_end_idx].values
+
+    # -------------------
+    # Step 8: Save results
+    # -------------------
+    logging.info("Step 8: Saving backtest results...")
+    results_summary = {
+        'ticker': ticker,
+        'window_size': window_size,
+        'epochs': epochs,
+        'threshold': threshold,
+        'initial_balance': initial_balance,
+        'transaction_cost': transaction_cost,
+        'final_value': backtest_results['final_value'],
+        'total_return': backtest_results['total_return'],
+        'expected_return': backtest_results['expected_return'],
+        'sharpe_ratio': backtest_results['sharpe_ratio'],
+        'max_drawdown': backtest_results['max_drawdown'],
+        'win_rate': backtest_results['win_rate'],
+        'total_trades': backtest_results['total_trades'],
+        'total_fees': backtest_results['total_fees'],
+        'buy_hold_return': backtest_results['buy_hold_return'],
+        'outperformance': backtest_results['outperformance'],
+    }
+
+    results_file = f'backtest_results_{ticker}_dummy.json'
+    with open(results_file, 'w') as f:
+        json.dump(results_summary, f, indent=2)
+    logging.info(f"Results saved to {results_file}")
+
+    if len(backtest_results['trades']) > 0:
+        trades_file = f'backtest_trades_{ticker}_dummy.csv'
+        backtest_results['trades'].to_csv(trades_file, index=False)
+        logging.info(f"Trade history saved to {trades_file}")
+
+    logging.info("Backtest-only pipeline finished successfully!")
