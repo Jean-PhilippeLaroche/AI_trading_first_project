@@ -40,16 +40,14 @@ Note: added automatic opening, use manual way if needed shouldn't be the case
    
 -- Run commands: ---
 Basic: python main.py --ticker AAPL --epochs 50 --window 60
-Custom: python main.py --ticker AAPL \
-               --epochs 200 \
-               --batch 64 \
-               --window 60 \
-               --train_size 0.9 \
-               --threshold 0.02 \
-               --balance 10000 \
-               --transaction_cost 0.02
+Custom: python main.py --ticker AAPL --epochs 200 --batch 64 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02
 No vizualisation: python main.py --ticker AAPL --epochs 50 --no_viz
 
+--- hypertuning parameters, manual method
+Custom: python main.py --ticker AAPL --epochs 200 --batch 64 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02
+First try: python main.py --ticker AAPL --epochs 50 --batch 128 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02 -> trying to increase batch size first, sucks ass
+Second try: python main.py --ticker AAPL --epochs 50 --batch 128 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02
+Third try: python main.py --ticker AAPL --epochs 50 --batch 32 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02
 
 ---- TO DO: ----
 1. Add forward testing with the best_model.pth

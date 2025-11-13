@@ -8,7 +8,7 @@ from utils.data_utils import (
     add_indicators,
     clean_data
 )
-from scripts.train import train_model, walk_forward_split, get_tensorboard_writer, launch_tensorboard
+from scripts.train import train_model, get_tensorboard_writer, launch_tensorboard
 from scripts.evaluate import visualize_model_performance
 from scripts.backtest import run_backtest
 
@@ -48,32 +48,68 @@ def main(
 
         atexit.register(cleanup_tensorboard)
 
-    # 1) Prepare scaled sequences (X,y) and scaler
-    logging.info("Step 1: Preparing data...")
-    X, y, scaler = prepare_data_for_ai(
+    # ============================================================
+    # STEP 1: Load full DF once and compute indicators / clean
+    # ============================================================
+    logging.info("Step 1: Loading and preparing full dataframe")
+    df_raw = load_stock_csv(ticker)
+    if df_raw is None:
+        logging.error("Could not load raw CSV for ticker; exiting.")
+        return
+
+    df_ind = add_indicators(df_raw)
+    df_clean = clean_data(df_ind)
+
+    n_total = len(df_clean)
+    split_idx = int(n_total * train_size)
+    logging.info(f"Total cleaned rows: {n_total}, train/val split index: {split_idx}")
+
+    # ============================================================
+    # STEP 2: Prepare TRAIN and VAL sequences using prepare_data_for_ai
+    #         Train: [0 : split_idx]
+    #         Val:   [split_idx : n_total]
+    # ============================================================
+    logging.info("Step 2: Preparing training sequences")
+    X_train, y_train, scaler = prepare_data_for_ai(
         ticker,
         data_dir=None,
         feature_columns=None,
         target_column="close",
-        window_size=window_size
+        window_size=window_size,
+        start_idx=0,
+        end_idx=split_idx,
+        # scaler=None  # implied by your default; we want it to fit here
     )
-    if X is None or y is None:
-        logging.error("Data preparation failed. Exiting.")
+    if X_train is None or y_train is None:
+        logging.error("Training data preparation failed. Exiting.")
         return
 
-    logging.info(f"Prepared sequences: X={X.shape}, y={y.shape}")
+    logging.info(f"Training sequences: X_train={X_train.shape}, y_train={y_train.shape}")
 
-    # 2) Walk-forward split
-    logging.info("Step 2: Splitting data chronologically...")
-    X_train, y_train, X_val, y_val = walk_forward_split(X, y, train_size=train_size)
-    logging.info(f"Split: train={len(X_train)} samples, val={len(X_val)} samples")
+    logging.info("Step 3: Preparing validation sequences")
+    X_val, y_val, _ = prepare_data_for_ai(
+        ticker,
+        data_dir=None,
+        feature_columns=None,
+        target_column="close",
+        window_size=window_size,
+        start_idx=split_idx,
+        end_idx=None,
+        scaler=scaler  # <-- reuse scaler, do NOT refit
+    )
+    if X_val is None or y_val is None:
+        logging.error("Validation data preparation failed. Exiting.")
+        return
 
-    # 3) Start TensorBoard writer for this run
-    logging.info("Step 3: Starting TensorBoard logging...")
+    logging.info(f"Validation sequences: X_val={X_val.shape}, y_val={y_val.shape}")
+
+    # ============================================================
+    # STEP 4: Start TensorBoard writer and train
+    # ============================================================
+    logging.info("Step 4: Starting TensorBoard logging...")
     writer = get_tensorboard_writer()
 
-    # 4) Train model
-    logging.info(f"Step 4: Training model for {epochs} epochs...")
+    logging.info(f"Step 5: Training model for {epochs} epochs...")
     model = train_model(
         X_train, y_train, X_val, y_val,
         input_size=X_train.shape[2],
@@ -88,37 +124,26 @@ def main(
         logging.error("Model training failed. Exiting.")
         return
 
-    # close writer
     try:
         writer.close()
     except Exception as e:
         logging.warning(f"Failed to close TensorBoard writer: {e}")
 
-    # 5) Load cleaned dataframe for backtesting
-    logging.info("Step 5: Loading data for backtesting...")
-    df_raw = load_stock_csv(ticker)
-    if df_raw is None:
-        logging.error("Could not load raw CSV for ticker; exiting.")
-        return
+    # ============================================================
+    # STEP 6: Run backtest on VALIDATION period only
+    #         Backtest DF = df_clean (with indicators already)
+    #         Period = [split_idx : n_total]
+    # ============================================================
+    logging.info("Step 6: Running backtest on validation slice of df_clean...")
 
-    df_ind = add_indicators(df_raw)
-    df_clean = clean_data(df_ind)
-
-    # Define feature columns (must match what was used in training)
     feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
     feature_columns = [c for c in feature_columns if c in df_clean.columns]
     logging.info(f"Using feature columns: {feature_columns}")
 
-    # 6) Run proper backtest on validation period
-    logging.info("Step 6: Running backtest on validation data...")
-
-    # Validation start and end
-    val_start_idx = int(len(df_clean) * train_size)
-    val_end_idx = len(df_clean)
-
+    val_start_idx = split_idx + window_size
+    val_end_idx = n_total
     logging.info(f"Backtest period: index {val_start_idx} to {val_end_idx} ({val_end_idx - val_start_idx} days)")
 
-    # Run backtest
     backtest_results = run_backtest(
         model=model,
         scaler=scaler,
@@ -132,28 +157,29 @@ def main(
         end_idx=val_end_idx
     )
 
-    # 7) Extract results for visualization
+    # ============================================================
+    # STEP 7: Prepare visualization data
+    # ============================================================
     logging.info("Step 7: Preparing visualization data...")
     portfolio_history = backtest_results['portfolio_history']
 
-    # Extract arrays for plotting
     val_dates = portfolio_history['date'].values
     actual_prices = portfolio_history['current_price'].values
     predicted_prices = portfolio_history['predicted_price'].values
 
-    # Convert signals to -1/0/1 format for plotting
     signal_map = {'BUY': 1, 'HOLD': 0, 'SELL': -1}
     signals = portfolio_history['signal'].map(signal_map).values
 
     portfolio_values = portfolio_history['portfolio_value'].values
 
-    # Get indicators for the validation period
     indicators = {}
     for ind in ["SMA", "RSI", "MACD", "MACD_Signal"]:
         if ind in df_clean.columns:
             indicators[ind] = df_clean[ind].iloc[val_start_idx:val_end_idx].values
 
-    # 8) Save backtest results to file
+    # ============================================================
+    # STEP 8: Save backtest results
+    # ============================================================
     logging.info("Step 8: Saving backtest results...")
     results_summary = {
         'ticker': ticker,
@@ -174,20 +200,20 @@ def main(
         'outperformance': backtest_results['outperformance']
     }
 
-    # Save to JSON
     import json
     results_file = f'backtest_results_{ticker}.json'
     with open(results_file, 'w') as f:
         json.dump(results_summary, f, indent=2)
     logging.info(f"Results saved to {results_file}")
 
-    # Save detailed trades to CSV
     if len(backtest_results['trades']) > 0:
         trades_file = f'backtest_trades_{ticker}.csv'
         backtest_results['trades'].to_csv(trades_file, index=False)
         logging.info(f"Trade history saved to {trades_file}")
 
-    # 9) Visualize (calls plot_utils via evaluate.visualize_model_performance)
+    # ============================================================
+    # STEP 9: Visualization
+    # ============================================================
     if visualize:
         logging.info("Step 9: Generating visualizations...")
         try:
@@ -203,7 +229,9 @@ def main(
             logging.error(f"Visualization failed: {e}")
             logging.exception("Full traceback:")
 
-    # 10) Print summary
+    # ============================================================
+    # STEP 10: Summary
+    # ============================================================
     logging.info("\n" + "=" * 70)
     logging.info("PIPELINE COMPLETE - SUMMARY")
     logging.info("=" * 70)

@@ -30,7 +30,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-from utils.data_utils import prepare_data_for_ai
 from torch.utils.tensorboard import SummaryWriter
 import datetime
 import subprocess
@@ -38,9 +37,6 @@ import webbrowser
 import time
 import platform
 import uuid
-import shutil
-import joblib
-from pathlib import Path
 
 def launch_tensorboard(logdir="runs", port=6006):
     """
@@ -353,137 +349,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
     return model
 
-
-# -----------------------------
-# Block 5: Orchestration / Run training for a ticker
-# -----------------------------
-
-def run_training_for_ticker(
-    ticker,
-    data_dir=None,
-    window_size=20,
-    feature_columns=None,
-    target_column="close",
-    rsi_period=14,
-    macd_fast=12,
-    macd_slow=26,
-    macd_signal=9,
-    sma_period=20,
-    train_size=0.8,
-    epochs=50,
-    batch_size=32,
-    lr=1e-3,
-    early_stopping_patience=10,
-    lr_scheduler_patience=5,
-    lr_scheduler_factor=0.5,
-    model_dir="models",
-    writer=None
-    ):
-    """
-    High level helper to prepare data for a ticker, run train_model, and save artifacts.
-
-    Args:
-        ticker (str): ticker symbol.
-        data_dir (str|None): path to raw CSVs (None -> auto-locate).
-        window_size (int): sequence length for prepare_data_for_ai.
-        feature_columns (list|None): which columns to use; None -> defaults.
-        target_column (str)
-        rsi_period, macd_*, sma_period: indicator parameters forwarded to prepare_data_for_ai.
-        train_size (float): fraction used for training in walk_forward_split.
-        epochs, batch_size, lr: training hyperparameters.
-        model_dir (str): directory to save trained model + scaler.
-        writer (SummaryWriter|None): TensorBoard writer (optional).
-
-    Returns:
-        dict with metadata: {'model_path': ..., 'scaler_path': ..., 'best_val_loss': ...}
-    """
-    logging.info(f"Preparing data for {ticker} (window={window_size})...")
-    X, y, scaler = prepare_data_for_ai(
-        ticker,
-        data_dir=data_dir,
-        feature_columns=feature_columns,
-        target_column=target_column,
-        window_size=window_size,
-        rsi_period=rsi_period,
-        macd_fast=macd_fast,
-        macd_slow=macd_slow,
-        macd_signal=macd_signal,
-        sma_period=sma_period
-    )
-
-    if X is None or y is None or len(X) == 0:
-        logging.error(f"Data preparation failed or empty for {ticker}. Aborting training.")
-        return None
-
-    if len(X) < window_size:
-        logging.error(f"Not enough data: need >{window_size}, got {len(X)}")
-        return None
-
-    # Walk-forward split
-    X_train, y_train, X_val, y_val = walk_forward_split(X, y, train_size=train_size)
-    logging.info(f"Data split: train={len(X_train)} samples, val={len(X_val)} samples")
-
-    # If caller didn't provide a writer, create one for this run
-    own_writer = False
-    if writer is None:
-        writer = get_tensorboard_writer()
-        own_writer = True
-
-    # Train
-    logging.info(f"Starting training for {ticker} for {epochs} epochs...")
-    model = train_model(
-        X_train, y_train, X_val, y_val,
-        input_size=X_train.shape[2],
-        epochs=epochs,
-        batch_size=batch_size,
-        lr=lr,
-        writer=writer,
-        scaler=scaler,
-        early_stopping_patience = early_stopping_patience,
-        lr_scheduler_patience = lr_scheduler_patience,
-        lr_scheduler_factor = lr_scheduler_factor
-    )
-
-    # Close writer if we created it
-    if own_writer:
-        writer.close()
-
-    # Model artifact handling
-    # train_model saves 'best_model.pth' when it finds a better validation loss.
-    default_checkpoint = Path("best_model.pth")
-    Path(model_dir).mkdir(parents=True, exist_ok=True)
-
-    timestamp = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}_{uuid.uuid4().hex[:6]}"
-    model_filename = f"{ticker}_model_{timestamp}.pth"
-    model_path = Path(model_dir) / model_filename
-
-    if default_checkpoint.exists():
-        try:
-            shutil.move(str(default_checkpoint), str(model_path))
-            logging.info(f"Saved trained model to {model_path}")
-        except Exception as e:
-            logging.error(f"Failed to move checkpoint: {e}")
-            model_path = None
-    else:
-        logging.warning("Expected checkpoint 'best_model.pth' not found. No model saved.")
-        model_path = None
-
-    # Save scaler (so inference will use same scaling)
-    scaler_filename = f"{ticker}_scaler_{timestamp}.joblib"
-    scaler_path = Path(model_dir) / scaler_filename
-    try:
-        joblib.dump(scaler, scaler_path)
-        logging.info(f"Saved scaler to {scaler_path}")
-    except Exception as e:
-        logging.error(f"Failed to save scaler: {e}")
-        scaler_path = None
-
-
-    return {
-        "model_path": str(model_path) if model_path else None,
-        "scaler_path": str(scaler_path) if scaler_path else None,
-        "timestamp": timestamp
-    }
 
 
 if __name__ == "__main__":
