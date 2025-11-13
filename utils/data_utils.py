@@ -254,52 +254,24 @@ def prepare_data_for_ai(
     macd_fast=12,
     macd_slow=26,
     macd_signal=9,
-    sma_period=20
+    sma_period=20,
+    start_idx=None,
+    end_idx=None,
+    scaler=None,
 ):
     """
-    Full pipeline to prepare stock data for AI training.
-
-    Args:
-        ticker (str): Stock ticker.
-        data_dir (str): Directory of raw CSVs.
-        feature_columns (list): Columns to use as features. If None, defaults to all indicators + Close.
-        target_column (str): Column to predict.
-        window_size (int): Number of past days in each sequence.
-        rsi_period, macd_fast, macd_slow, macd_signal, sma_period: Indicator parameters.
-
-    Returns:
-        X (np.array): Sequence data for AI.
-        y (np.array): Target values.
-        scaler (MinMaxScaler): Fitted scaler for features.
+    Full pipeline to prepare stock data for AI training or validation.
     """
 
-    # -----------------------------
-    # Auto-locate data/raw
-    # -----------------------------
-    if data_dir is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        found = False
-        # Walk up 3 levels to find project root
-        for _ in range(3):
-            candidate = os.path.join(base_dir, "data", "raw")
-            if os.path.exists(candidate):
-                data_dir = candidate
-                found = True
-                break
-            base_dir = os.path.dirname(base_dir)
-        if not found:
-            logging.error("Could not find 'data/raw' folder in project tree.")
-            return None, None, None
-
-    # 1. Load
-    df = load_stock_csv(ticker, data_dir)
-    if df is None:
-        logging.error(f"Cannot prepare data for {ticker}: CSV not found.")
+    # 1) Load full raw dataframe
+    whole_df = load_stock_csv(ticker, data_dir)
+    if whole_df is None:
+        logging.error(f"CSV not found for {ticker}.")
         return None, None, None
 
-    # 2. Add indicators
-    df = add_indicators(
-        df,
+    # 2) Compute indicators on FULL data (no leakage)
+    whole_df = add_indicators(
+        whole_df,
         rsi_period=rsi_period,
         macd_fast=macd_fast,
         macd_slow=macd_slow,
@@ -308,21 +280,37 @@ def prepare_data_for_ai(
         price_column=target_column
     )
 
-    # 3. Clean
-    df = clean_data(df)
+    whole_df = clean_data(whole_df)
 
-    # 4. Select features
+    # 3) Slice AFTER indicator computation
+    s = start_idx if start_idx is not None else 0
+    e = end_idx if end_idx is not None else len(whole_df)
+    df = whole_df.iloc[s:e].copy()
+
+    # 4) Select features
     if feature_columns is None:
         feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
-        feature_columns = [col for col in feature_columns if col in df.columns]
+        feature_columns = [c for c in feature_columns if c in df.columns]
 
-    # 5. Scale
-    df_scaled, scaler = scale_features(df, feature_columns=feature_columns)
+    # 5) Scale features
+    if scaler is None:
+        # Training phase: create and fit new scaler
+        scaler = MinMaxScaler()
+        scaler.fit(df[feature_columns])
+        logging.info("Created and fitted new scaler")
+    else:
+        # Validation phase: use existing scaler (no fitting)
+        logging.info("Using provided scaler (no refitting)")
 
-    # 6. Create sequences
-    X, y = create_sequences(df_scaled, feature_columns, target_column=target_column, window_size=window_size)
+    df_scaled = df.copy()
+    df_scaled[feature_columns] = scaler.transform(df[feature_columns])
 
-    logging.info(f"Data prepared for AI: {ticker} | sequences: {X.shape[0]}")
+    # 6) Create sequences
+    X, y = create_sequences(df_scaled, feature_columns,
+                            target_column=target_column,
+                            window_size=window_size)
+
+    logging.info(f"Prepared {X.shape[0]} sequences for {ticker}")
     return X, y, scaler
 
 
