@@ -47,6 +47,7 @@ python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedfor
 python main.py --ticker AAPL --epochs 30 --batch 128 --lr 5e-5
 
 # Hypertuning parameters
+python main.py --ticker AAPL --window=20 --train_size=0.8 --epochs=1 --batch=64 --lr=1e-4 --threshold=0.01 --balance=10000 --transaction_cost=0.02 --d_model=64 --nhead=4 --num_layers=2 --dim_feedforward=256 --dropout=0.1 --patience=20 --lr_scheduler_patience=5 --lr_scheduler_factor=0.5
 
 # TO DO:
 1. Add forward testing with the best_model.pth
