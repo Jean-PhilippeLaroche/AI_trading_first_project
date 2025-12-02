@@ -33,7 +33,12 @@ import time
 import platform
 import uuid
 import math
-from utils.transformer_visuals import update_attention_window, init_attention_window
+from utils.transformer_visuals import (
+    update_attention_window,
+    init_attention_window,
+    set_feature_names,
+    log_feature_importance_to_tensorboard
+)
 
 
 def launch_tensorboard(logdir="runs", port=6006):
@@ -299,6 +304,8 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         dropout: Dropout rate
     """
 
+    set_feature_names(["close", "RSI", "MACD", "MACD_Signal", "SMA"])
+
     # Initialize Transformer model
     model = TimeSeriesTransformerPooled(
         input_size=input_size,
@@ -383,6 +390,10 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
             outputs, attn = model(batch_X)
             outputs = outputs.squeeze(-1)
 
+            # Store the last batch_X and attn for epoch-level logging
+            last_batch_X = batch_X
+            last_attn = attn
+
             # Compute mean attention map across batch
             mean_attn = [a.mean(dim=0).detach().cpu().numpy() for a in attn]
             # mean_attn becomes a list: [ (heads, seq, seq), ... per layer ]
@@ -421,6 +432,9 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         forward_times.append(ep_forward)
         backward_times.append(ep_backward)
         optimizer_times.append(ep_optimizer)
+
+        if writer is not None:
+            log_feature_importance_to_tensorboard(writer, last_batch_X, last_attn, epoch)
 
         # --------------------------
         # VALIDATION LOOP
