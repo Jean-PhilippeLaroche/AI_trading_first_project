@@ -136,7 +136,7 @@ def compute_feature_importance(batch_X, attn_weights):
     # Normalize to sum to 1
     feature_importance = feature_importance / (feature_importance.sum() + 1e-8)
 
-    return feature_importance.cpu().numpy()
+    return feature_importance.detach().cpu().numpy()
 
 
 def log_feature_importance_to_tensorboard(writer, batch_X, attn_weights, epoch):
