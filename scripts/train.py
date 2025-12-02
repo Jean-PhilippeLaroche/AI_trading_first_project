@@ -10,15 +10,10 @@ The training process:
 
 TODO:
 - Add support for multiple tickers (portfolio-level training).
-- Hyperparameter tuning (grid search, optuna, etc.).
 - Support multiple walk-forward folds (not just one train/val split).
 - Integrate wandb for richer experiment tracking if needed.
-- Add more complex architectures: GRU, Transformers.
 - Add multi-horizon forecasting (predict multiple days ahead).
 - Add feature-wise attention / embedding layers for indicators.
-- Support multi-ticker inputs as batch sequences.
-- Support multiple tickers by iterating over a list of tickers
-- Experiment with more advanced architectures (GRU, Transformer)
 """
 
 # -----------------------------
@@ -38,6 +33,7 @@ import time
 import platform
 import uuid
 import math
+from utils.transformer_visuals import update_attention_window, init_attention_window
 
 
 def launch_tensorboard(logdir="runs", port=6006):
@@ -192,8 +188,11 @@ class TimeSeriesTransformerPooled(nn.Module):
             dim_feedforward=512,
             dropout=0.1,
             max_len=5000
+
     ):
         super().__init__()
+
+        self.return_attn = True  # allow extraction for transformer_visuals
 
         self.input_projection = nn.Linear(input_size, d_model)
         self.pos_encoder = PositionalEncoding(d_model, max_len, dropout)
@@ -233,8 +232,24 @@ class TimeSeriesTransformerPooled(nn.Module):
         x = self.input_projection(x)
         x = self.pos_encoder(x)
 
-        # Transformer encoding
-        x = self.transformer_encoder(x)
+        # to store attention values for viz
+        all_attn = []
+
+        # Manually forward through layers to access attention weights
+        for layer in self.transformer_encoder.layers:
+            x_before = x
+            x2, attn = layer.self_attn(
+                x_before,
+                x_before,
+                x_before,
+                need_weights=self.return_attn,
+                average_attn_weights=False
+            )
+            all_attn.append(attn)  # shape: (batch, heads, seq, seq)
+
+            # Continue through feedforward part
+            x = layer.norm1(x_before + x2)
+            x = layer.norm2(x + layer.linear2(layer.dropout(layer.activation(layer.linear1(x)))))
 
         # Pool over sequence dimension
         # Mean pooling captures average pattern
@@ -248,7 +263,10 @@ class TimeSeriesTransformerPooled(nn.Module):
         # Output projection
         output = self.output_projection(x)
 
-        return output
+        if self.return_attn:
+            return output, all_attn
+        else:
+            return output
 
 
 # -----------------------------
@@ -290,6 +308,8 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         dim_feedforward=dim_feedforward,
         dropout=dropout
     ).to(DEVICE)
+
+    init_attention_window(num_layers, nhead, X_train.shape[1])
 
     logging.info(f"Initialized Transformer with {sum(p.numel() for p in model.parameters()):,} parameters")
 
@@ -359,7 +379,14 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
             # Forward pass
             t0 = time.time()
             fwd_start = time.time()
-            outputs = model(batch_X).squeeze(-1)
+
+            outputs, attn = model(batch_X)
+            outputs = outputs.squeeze(-1)
+
+            # Compute mean attention map across batch
+            mean_attn = [a.mean(dim=0).detach().cpu().numpy() for a in attn]
+            # mean_attn becomes a list: [ (heads, seq, seq), ... per layer ]
+
             forward_times.append(time.time() - fwd_start)
 
             fwd_time = time.time() - t0
@@ -417,6 +444,8 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         scheduler.step(avg_val_loss)
 
         epoch_times.append(time.time() - epoch_start)
+
+        update_attention_window(mean_attn, epoch)
 
         # --------------------------
         # TENSORBOARD LOGGING
