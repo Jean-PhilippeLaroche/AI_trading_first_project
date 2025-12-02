@@ -39,7 +39,10 @@ def main(
         nhead=8,
         num_layers=3,
         dim_feedforward=512,
-        dropout=0.1
+        dropout=0.1,
+        patience=20,
+        lr_scheduler_patience=5,
+        lr_scheduler_factor=0.5
 ):
     logging.info(f"Starting pipeline for {ticker}")
     logging.info(f"Configuration: window={window_size}, epochs={epochs}, threshold={threshold * 100}%")
@@ -144,7 +147,10 @@ def main(
         nhead=nhead,
         num_layers=num_layers,
         dim_feedforward=dim_feedforward,
-        dropout=dropout
+        dropout=dropout,
+        early_stopping_patience=patience,
+        lr_scheduler_patience=lr_scheduler_patience,
+        lr_scheduler_factor=lr_scheduler_factor
     )
 
     if model is None:
@@ -331,6 +337,10 @@ if __name__ == "__main__":
                         help="Batch size for training")
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate")
+    parser.add_argument("--lr_scheduler_patience", type=int, default=5,
+                        help="Learning rate reduced after fixed number of epoch without improvement")
+    parser.add_argument("--lr_scheduler_factor", type=float, default=0.5,
+                        help="Learning rate")
 
     # Transformer hyperparameters
     parser.add_argument("--d_model", type=int, default=128,
@@ -351,6 +361,8 @@ if __name__ == "__main__":
                         help="Initial balance for backtesting")
     parser.add_argument("--transaction_cost", type=float, default=0.02,
                         help="Transaction cost as fraction (e.g., 0.02 = 2%%)")
+    parser.add_argument("--patience", type=int, default=20,
+                        help="Early stopping after fixed number of epoch without improvement")
 
     # Visualization
     parser.add_argument("--no_viz", action="store_true",

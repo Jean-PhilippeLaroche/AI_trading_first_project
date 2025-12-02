@@ -160,10 +160,15 @@ class Backtester:
         sequences = []
         failed_indices = []
 
+        count=0
         for i in range(start_idx, end_idx):
             try:
                 seq = self.prepare_sequence(i)
                 sequences.append(seq)
+                count+=1
+                if count%10000 == 0:
+                    progress = (count*100)/num_timesteps
+                    logging.info(f"  Processed {count}/{num_timesteps} sequences ({progress:.2f}%)")
             except Exception as e:
                 logging.warning(f"Failed to prepare sequence at index {i}: {e}")
                 sequences.append(None)
@@ -216,9 +221,8 @@ class Backtester:
             all_predictions_scaled.extend(batch_results)
 
             # Progress logging (every 10 batches or at end)
-            if (batch_idx + 1) % 10 == 0 or batch_idx == num_batches - 1:
-                progress = ((batch_idx + 1) / num_batches) * 100
-                logging.info(f"  Batch {batch_idx + 1}/{num_batches} ({progress:.1f}%)")
+            if batch_idx == num_batches - 1:
+                logging.info(f"  Prepared {num_batches} batches")
 
         # Step 3: Inverse transform all predictions at once (vectorized - very fast!)
         logging.info("Inverse scaling predictions to original price units...")
@@ -403,7 +407,7 @@ class Backtester:
             })
 
             # Progress logging every 1k timesteps
-            if (idx + 1) % 1000 == 0:
+            if (idx + 1) % 20000 == 0:
                 progress = ((idx + 1) / num_timesteps) * 100
                 logging.info(f"  Processed {idx + 1}/{num_timesteps} timesteps ({progress:.1f}%)")
 
