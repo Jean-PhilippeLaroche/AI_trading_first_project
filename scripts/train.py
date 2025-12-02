@@ -432,7 +432,10 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         with torch.no_grad():
             for batch_X, batch_y in val_loader:
                 batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
-                outputs = model(batch_X).squeeze(-1)
+
+                outputs, _ = model(batch_X)
+                outputs = outputs.squeeze(-1)
+
                 val_loss = criterion(outputs, batch_y)
                 val_losses.append(val_loss.item())
 
