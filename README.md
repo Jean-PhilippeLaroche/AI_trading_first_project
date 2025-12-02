@@ -38,10 +38,20 @@ python scripts/download_data_polygon.py --tickers AAPL MSFT AMZN JPM BAC XOM CAT
 Note: added automatic opening, use manual way if needed shouldn't be the case
 
    
--- Run commands: ---
+-- Old run commands: ---
 Basic: python main.py --ticker AAPL --epochs 50 --window 60
 Custom: python main.py --ticker AAPL --epochs 200 --batch 64 --window 60 --train_size 0.8 --threshold 0.02 --balance 10000 --transaction_cost 0.02
 No vizualisation: python main.py --ticker AAPL --epochs 50 --no_viz
+
+-- New run commands: --
+# Larger model for better performance
+python main.py --ticker AAPL --d_model 256 --nhead 8 --num_layers 4 --dim_feedforward 1024
+
+# Smaller model for faster training
+python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedforward 256
+
+# Adjust training parameters
+python main.py --ticker AAPL --epochs 30 --batch 128 --lr 5e-5
 
 --- hypertuning parameters: ---
 
