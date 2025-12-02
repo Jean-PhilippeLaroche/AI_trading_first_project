@@ -254,7 +254,3 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.show()
-
-    # ----- Optional: plot history -----
-    # TODO: Add code to visualize price vs portfolio vs actions
-    # Example: env._plot_history()
