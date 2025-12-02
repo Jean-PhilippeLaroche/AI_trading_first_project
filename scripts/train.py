@@ -37,6 +37,8 @@ import webbrowser
 import time
 import platform
 import uuid
+import math
+
 
 def launch_tensorboard(logdir="runs", port=6006):
     """
@@ -95,6 +97,7 @@ logging.basicConfig(
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logging.info(f"Using device: {DEVICE}")
 
+
 # -----------------------------
 # Block 2: Walk-forward validation + Experiment Logging
 # -----------------------------
@@ -141,45 +144,111 @@ def get_tensorboard_writer(log_dir="runs"):
 
 
 # -----------------------------
-# Block 3: Model Definition + Dataset Preparation
+# Block 3: Transformer Model Definition
 # -----------------------------
 
-
-class StockPredictor(nn.Module):
+class PositionalEncoding(nn.Module):
     """
-    Simple LSTM-based model for stock prediction using technical indicators.
-    Future improvements:
-        - Add GRU / Transformer layers.
-        - Multi-ticker input.
-        - Attention mechanism for feature importance.
+    Adds positional information to the input embeddings.
+    Since Transformers have no inherent sense of order (unlike RNNs),
+    we need to inject position information.
     """
 
-    def __init__(self, input_size, hidden_size=64, num_layers=2, output_size=1, dropout=0.2):
-        super(StockPredictor, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
+    def __init__(self, d_model, max_len=5000, dropout=0.1):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
 
-        # LSTM layers
-        self.lstm = nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout
-        )
+        # Create positional encoding matrix
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
 
-        # Fully connected output layer
-        self.fc = nn.Linear(hidden_size, output_size)
+        # Use sine and cosine functions of different frequencies
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+
+        pe = pe.unsqueeze(0)  # Add batch dimension
+        self.register_buffer('pe', pe)
 
     def forward(self, x):
-        # x shape: (batch, seq_len, features)
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        # x shape: (batch_size, seq_len, d_model)
+        x = x + self.pe[:, :x.size(1), :]
+        return self.dropout(x)
 
-        out, _ = self.lstm(x, (h0, c0))  # out: (batch, seq_len, hidden_size)
-        out = out[:, -1, :]  # take last time step
-        out = self.fc(out)   # map to output
-        return out.squeeze(-1)
+
+class TimeSeriesTransformerPooled(nn.Module):
+    """
+    Variant that uses both mean and max pooling over the sequence
+    instead of just taking the last timestep.
+    Often more robust for capturing overall trends.
+    """
+
+    def __init__(
+            self,
+            input_size,
+            d_model=128,
+            nhead=8,
+            num_layers=3,
+            dim_feedforward=512,
+            dropout=0.1,
+            max_len=5000
+    ):
+        super().__init__()
+
+        self.input_projection = nn.Linear(input_size, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, max_len, dropout)
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+            activation='gelu'
+        )
+
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_layers,
+            norm=nn.LayerNorm(d_model)
+        )
+
+        # Output projection takes 2*d_model (mean + max pooling concatenated)
+        self.output_projection = nn.Sequential(
+            nn.Linear(d_model * 2, d_model),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 1)
+        )
+
+        self._init_weights()
+
+    def _init_weights(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+
+    def forward(self, x):
+        # Project and add positional encoding
+        x = self.input_projection(x)
+        x = self.pos_encoder(x)
+
+        # Transformer encoding
+        x = self.transformer_encoder(x)
+
+        # Pool over sequence dimension
+        # Mean pooling captures average pattern
+        mean_pool = torch.mean(x, dim=1)  # (batch, d_model)
+        # Max pooling captures strongest signals
+        max_pool, _ = torch.max(x, dim=1)  # (batch, d_model)
+
+        # Concatenate both pooling strategies
+        x = torch.cat([mean_pool, max_pool], dim=1)  # (batch, 2*d_model)
+
+        # Output projection
+        output = self.output_projection(x)
+
+        return output
 
 
 # -----------------------------
@@ -187,21 +256,49 @@ class StockPredictor(nn.Module):
 # -----------------------------
 
 def train_model(X_train, y_train, X_val, y_val, input_size,
-                epochs=20, batch_size=16, lr=1e-3, writer=None, scaler=None,
-                early_stopping_patience=20, lr_scheduler_patience=5, lr_scheduler_factor=0.5):
+                epochs=20, batch_size=64, lr=1e-4, writer=None, scaler=None,
+                early_stopping_patience=20, lr_scheduler_patience=5, lr_scheduler_factor=0.5,
+                d_model=128, nhead=8, num_layers=3, dim_feedforward=512, dropout=0.1):
+    """
+    Train the Transformer model.
 
-    model = StockPredictor(
+    Args:
+        X_train, y_train: Training data
+        X_val, y_val: Validation data
+        input_size: Number of input features
+        epochs: Number of training epochs
+        batch_size: Batch size (can be larger for Transformers)
+        lr: Learning rate (lower for Transformers, typically 1e-4)
+        writer: TensorBoard writer
+        scaler: Data scaler (for inverse transform)
+        early_stopping_patience: Early stopping patience
+        lr_scheduler_patience: LR scheduler patience
+        lr_scheduler_factor: LR scheduler reduction factor
+        d_model: Transformer model dimension
+        nhead: Number of attention heads
+        num_layers: Number of transformer layers
+        dim_feedforward: Feedforward dimension
+        dropout: Dropout rate
+    """
+
+    # Initialize Transformer model
+    model = TimeSeriesTransformerPooled(
         input_size=input_size,
-        hidden_size=64,
-        num_layers=2,
-        output_size=1,
-        dropout=0.2
+        d_model=d_model,
+        nhead=nhead,
+        num_layers=num_layers,
+        dim_feedforward=dim_feedforward,
+        dropout=dropout
     ).to(DEVICE)
 
+    logging.info(f"Initialized Transformer with {sum(p.numel() for p in model.parameters()):,} parameters")
 
     criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    # AdamW optimizer (better for Transformers)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+
+    # Learning rate scheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=lr_scheduler_factor,
         patience=lr_scheduler_patience, min_lr=1e-6
@@ -251,7 +348,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         ep_optimizer = 0.0
 
         for batch_X, batch_y in train_loader:
-
             t0 = time.time()
             batch_load_start = time.time()
             batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
@@ -292,7 +388,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
             train_losses.append(loss.item())
 
-
         train_loop_times.append(time.time() - train_loop_start)
 
         batch_load_times.append(ep_batch_load)
@@ -324,9 +419,17 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         epoch_times.append(time.time() - epoch_start)
 
         # --------------------------
-        # LOGGING
+        # TENSORBOARD LOGGING
         # --------------------------
-        print(f"\nEpoch {epoch}/{epochs}")
+        if writer is not None:
+            writer.add_scalar('Loss/train', avg_train_loss, epoch)
+            writer.add_scalar('Loss/validation', avg_val_loss, epoch)
+            writer.add_scalar('Learning_Rate', optimizer.param_groups[0]['lr'], epoch)
+
+        # --------------------------
+        # CONSOLE LOGGING
+        # --------------------------
+        logging.info(f"\nEpoch {epoch}/{epochs}")
         print(f"  Train Loop: {train_loop_times[-1]:.3f}s")
         print(f"    Batch loading: {ep_batch_load:.2f}s")
         print(f"    Forward pass : {ep_forward:.2f}s")
@@ -335,19 +438,29 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         print(f"  Validation Loop:   {val_loop_times[-1]:.3f}s")
         print(f"  Total:      {epoch_times[-1]:.3f}s")
         print(f"  Loss:       {avg_train_loss:.6f} (train), {avg_val_loss:.6f} (val)")
+        print(f"  LR:         {optimizer.param_groups[0]['lr']:.2e}")
 
         # --------------------------
         # Early Stopping
         # --------------------------
         if avg_val_loss < best_val_loss:
             torch.save(model.state_dict(), checkpoint_path)
+            logging.info(f"New best model saved (val_loss: {avg_val_loss:.6f})")
             best_val_loss = avg_val_loss
             epochs_without_improvement = 0
         else:
             epochs_without_improvement += 1
+            print(f"Epochs without improvement: {epochs_without_improvement}")
             if epochs_without_improvement >= early_stopping_patience:
-                print(f"\nEarly stopping triggered after {epochs_without_improvement} epochs without improvements")
+                logging.info(
+                    f"\nEarly stopping triggered after {epochs_without_improvement} epochs without improvement")
                 break
+
+    # --------------------------
+    # LOAD BEST MODEL
+    # --------------------------
+    model.load_state_dict(torch.load(checkpoint_path))
+    logging.info(f"Loaded best model from {checkpoint_path}")
 
     # --------------------------
     # FINAL PROFILING SUMMARY
@@ -363,22 +476,10 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
     print(f"Avg backward pass:  {np.mean(backward_times):.6f}s")
     print(f"Avg optimizer step: {np.mean(optimizer_times):.6f}s")
 
-    print("\n--- Bottleneck Hint ---")
-    if np.mean(forward_times) > np.mean(backward_times) * 1.5:
-        print("Forward pass is slow → model too big, window too large, or GPU underutilized.")
-    if np.mean(batch_load_times) > np.mean(forward_times):
-        print("DataLoader is the bottleneck → num_workers, pin_memory.")
-    if np.mean(backward_times) > np.mean(forward_times) * 1.5:
-        print("Backward pass dominates → reduce hidden size or num_layers.")
-    if np.mean(optimizer_times) > 0.5 * np.mean(backward_times):
-        print("Optimizer overhead → switch to fused/AdamW, or larger batch size.")
-
     return model
 
 
-
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.INFO)
 
     # ---- Launch TensorBoard automatically ----
@@ -404,27 +505,19 @@ if __name__ == "__main__":
 
     logging.info("TensorBoard writer test completed. Check 'runs/' folder for logs.")
 
-    # ---- Train the LSTM model with dummy data ----
+    # ---- Train the Transformer model with dummy data ----
     logging.info("Starting dummy training loop...")
     writer = get_tensorboard_writer()  # reopen writer for training logs
     model = train_model(
         X_train, y_train, X_val, y_val,
         input_size=X_train.shape[2],  # number of features
         epochs=5,  # keep short for testing
-        batch_size=16,
-        lr=1e-3,
+        batch_size=32,  # Larger batch for Transformer
+        lr=1e-4,  # Lower LR for Transformer
         writer=writer,
-        scaler=None
+        scaler=None,
+        d_model=64,  # Smaller for testing
+        nhead=4,
+        num_layers=2
     )
     writer.close()
-    logging.info("Dummy training completed.")
-
-    # ---- Keep TensorBoard alive until user stops script ----
-    try:
-        logging.info("TensorBoard running. Press Ctrl+C to stop.")
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        if tb_process:
-            tb_process.terminate()
-            logging.info("TensorBoard stopped.")

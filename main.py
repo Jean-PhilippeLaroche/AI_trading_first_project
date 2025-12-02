@@ -50,7 +50,7 @@ def main(
         atexit.register(cleanup_tensorboard)
 
     # ============================================================
-    # STEP 1: Load full DF once and compute indicators / clean
+    # STEP 1: Load temp df for correct split_idx and end_idx indexes
     # ============================================================
     t0 = time.time()
     logging.info("Step 1: Loading and preparing full dataframe")
@@ -59,10 +59,10 @@ def main(
         logging.error("Could not load raw CSV for ticker; exiting.")
         return
 
-    df_ind = add_indicators(df_raw)
-    df_clean = clean_data(df_ind)
+    df_tmp = add_indicators(df_raw)
+    df_tmp = clean_data(df_tmp)
 
-    n_total = len(df_clean)
+    n_total = len(df_tmp)
     split_idx = int(n_total * train_size)
     logging.info(f"Total cleaned rows: {n_total}, train/val split index: {split_idx}")
 
@@ -84,7 +84,7 @@ def main(
         window_size=window_size,
         start_idx=0,
         end_idx=split_idx,
-        # scaler=None  # implied by your default; we want it to fit here
+        # scaler=None
     )
     if X_train is None or y_train is None:
         logging.error("Training data preparation failed. Exiting.")
@@ -105,7 +105,7 @@ def main(
         window_size=window_size,
         start_idx=split_idx,
         end_idx=None,
-        scaler=scaler  # <-- reuse scaler, do NOT refit
+        scaler=scaler
     )
     if X_val is None or y_val is None:
         logging.error("Validation data preparation failed. Exiting.")
@@ -148,11 +148,14 @@ def main(
 
     # ============================================================
     # STEP 6: Run backtest on VALIDATION period only
-    #         Backtest DF = df_clean (with indicators already)
+    #         Backtest DF = df_clean (recomputed to avoid leakages)
     #         Period = [split_idx : n_total]
     # ============================================================
     t0 = time.time()
     logging.info("Step 6: Running backtest on validation slice of df_clean...")
+
+    df_clean = add_indicators(df_raw)
+    df_clean = clean_data(df_clean)
 
     feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
     feature_columns = [c for c in feature_columns if c in df_clean.columns]

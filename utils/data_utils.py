@@ -258,6 +258,7 @@ def prepare_data_for_ai(
     start_idx=None,
     end_idx=None,
     scaler=None,
+        df=None
 ):
     """
     Full pipeline to prepare stock data for AI training or validation.
