@@ -359,7 +359,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
             # Forward pass
             t0 = time.time()
             fwd_start = time.time()
-            outputs = model(batch_X)
+            outputs = model(batch_X).squeeze(-1)
             forward_times.append(time.time() - fwd_start)
 
             fwd_time = time.time() - t0
@@ -405,7 +405,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         with torch.no_grad():
             for batch_X, batch_y in val_loader:
                 batch_X, batch_y = batch_X.to(DEVICE), batch_y.to(DEVICE)
-                outputs = model(batch_X)
+                outputs = model(batch_X).squeeze(-1)
                 val_loss = criterion(outputs, batch_y)
                 val_losses.append(val_loss.item())
 
@@ -480,6 +480,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
 
 if __name__ == "__main__":
+
     logging.basicConfig(level=logging.INFO)
 
     # ---- Launch TensorBoard automatically ----
@@ -521,3 +522,14 @@ if __name__ == "__main__":
         num_layers=2
     )
     writer.close()
+    logging.info("Dummy training completed.")
+
+    # ---- Keep TensorBoard alive until user stops script ----
+    try:
+        logging.info("TensorBoard running. Press Ctrl+C to stop.")
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        if tb_process:
+            tb_process.terminate()
+            logging.info("TensorBoard stopped.")

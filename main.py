@@ -27,16 +27,23 @@ def main(
         ticker="AAPL",
         window_size=20,
         train_size=0.8,
-        epochs=10,
-        batch_size=32,
-        lr=1e-3,
-        threshold=0.01,  # relative threshold for buy/sell (1% default)
+        epochs=20,
+        batch_size=64,
+        lr=1e-4,
+        threshold=0.01,
         initial_balance=10000,
-        transaction_cost=0.02,  # 2% total cost
-        visualize=True
+        transaction_cost=0.02,
+        visualize=True,
+        # Transformer hyperparameters
+        d_model=128,
+        nhead=8,
+        num_layers=3,
+        dim_feedforward=512,
+        dropout=0.1
 ):
     logging.info(f"Starting pipeline for {ticker}")
     logging.info(f"Configuration: window={window_size}, epochs={epochs}, threshold={threshold * 100}%")
+    logging.info(f"Transformer config: d_model={d_model}, nhead={nhead}, num_layers={num_layers}")
 
     # ---- Launch TensorBoard automatically ----
     tb_process = launch_tensorboard(logdir="runs", port=6006)
@@ -123,7 +130,7 @@ def main(
     logging.info("Step 4: Starting TensorBoard logging...")
     writer = get_tensorboard_writer()
 
-    logging.info(f"Step 5: Training model for {epochs} epochs...")
+    logging.info(f"Step 5: Training Transformer model for {epochs} epochs...")
     model = train_model(
         X_train, y_train, X_val, y_val,
         input_size=X_train.shape[2],
@@ -131,7 +138,13 @@ def main(
         batch_size=batch_size,
         lr=lr,
         writer=writer,
-        scaler=scaler
+        scaler=scaler,
+        # Transformer-specific parameters
+        d_model=d_model,
+        nhead=nhead,
+        num_layers=num_layers,
+        dim_feedforward=dim_feedforward,
+        dropout=dropout
     )
 
     if model is None:
@@ -299,7 +312,7 @@ def main(
 # ---------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Stock Trading AI - Train model and backtest strategy",
+        description="Stock Trading AI - Train Transformer model and backtest strategy",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -312,12 +325,24 @@ if __name__ == "__main__":
                         help="Fraction of data for training (rest for validation)")
 
     # Training parameters
-    parser.add_argument("--epochs", type=int, default=50,
+    parser.add_argument("--epochs", type=int, default=20,
                         help="Number of training epochs")
     parser.add_argument("--batch", type=int, default=64,
                         help="Batch size for training")
-    parser.add_argument("--lr", type=float, default=1e-3,
+    parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate")
+
+    # Transformer hyperparameters
+    parser.add_argument("--d_model", type=int, default=128,
+                        help="Transformer model dimension")
+    parser.add_argument("--nhead", type=int, default=8,
+                        help="Number of attention heads")
+    parser.add_argument("--num_layers", type=int, default=3,
+                        help="Number of transformer layers")
+    parser.add_argument("--dim_feedforward", type=int, default=512,
+                        help="Feedforward network dimension")
+    parser.add_argument("--dropout", type=float, default=0.1,
+                        help="Dropout rate")
 
     # Trading parameters
     parser.add_argument("--threshold", type=float, default=0.02,
@@ -343,5 +368,11 @@ if __name__ == "__main__":
         threshold=args.threshold,
         initial_balance=args.balance,
         transaction_cost=args.transaction_cost,
-        visualize=not args.no_viz
+        visualize=not args.no_viz,
+        # Transformer hyperparameters
+        d_model=args.d_model,
+        nhead=args.nhead,
+        num_layers=args.num_layers,
+        dim_feedforward=args.dim_feedforward,
+        dropout=args.dropout
     )
