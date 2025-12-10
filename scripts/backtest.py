@@ -369,15 +369,15 @@ class Backtester:
         self.trades = []
 
         # ===================================================================
-        # OPTIMIZATION: Batch predict all prices at once (1000x faster!)
+        # OPTIMIZATION: Batch predict all prices at once
         # ===================================================================
         all_predicted_prices = self.predict_all_prices_batch(
             start_idx,
             end_idx,
-            batch_size=1024  # Adjust: 512 (slower, less memory) to 4096 (faster, more memory)
+            batch_size=1024  # 512 (slower, less memory) to 4096 (faster, more memory)
         )
 
-        # Now loop through and process signals/trades (this is fast)
+        # Now loop through and process signals/trades
         logging.info("Processing trading signals and executing trades...")
         num_timesteps = end_idx - start_idx
 
