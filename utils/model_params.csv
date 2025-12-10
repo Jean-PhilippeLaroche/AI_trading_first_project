@@ -1,0 +1,32 @@
+Component,Parameter,Dimension
+Input Embedding,W_emb,ℝ^64×5
+Input Embedding,b_emb,ℝ^64
+,,
+Transformer Layer 0,,
+Self-Attention,W_Q^(0),ℝ^64×64
+Self-Attention,W_K^(0),ℝ^64×64
+Self-Attention,W_V^(0),ℝ^64×64
+Self-Attention,b_Q^(0),ℝ^64
+Self-Attention,b_K^(0),ℝ^64
+Self-Attention,b_V^(0),ℝ^64
+Self-Attention,W_O^(0),ℝ^64×64
+Self-Attention,b_O^(0),ℝ^64
+Feed-Forward,W_1^(0),ℝ^256×64
+Feed-Forward,b_1^(0),ℝ^256
+Feed-Forward,W_2^(0),ℝ^64×256
+Feed-Forward,b_2^(0),ℝ^64
+,,
+Transformer Layer 1,,
+Self-Attention,W_Q^(1),ℝ^64×64
+Self-Attention,W_K^(1),ℝ^64×64
+Self-Attention,W_V^(1),ℝ^64×64
+Self-Attention,b_Q^(1),ℝ^64
+Self-Attention,b_K^(1),ℝ^64
+Self-Attention,b_V^(1),ℝ^64
+Self-Attention,W_O^(1),ℝ^64×64
+Self-Attention,b_O^(1),ℝ^64
+Feed-Forward,W_1^(1),ℝ^256×64
+Feed-Forward,b_1^(1),ℝ^256
+Feed-Forward,W_2^(1),ℝ^64×256
+Feed-Forward,b_2^(1),ℝ^64
+,,
