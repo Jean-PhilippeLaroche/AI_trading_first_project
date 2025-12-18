@@ -176,7 +176,7 @@ def main(
     df_clean = add_indicators(df_raw)
     df_clean = clean_data(df_clean)
 
-    feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
+    feature_columns = ["close", "volume", "RSI", "MACD", "MACD_Signal", "SMA"]
     feature_columns = [c for c in feature_columns if c in df_clean.columns]
     logging.info(f"Using feature columns: {feature_columns}")
 

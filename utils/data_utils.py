@@ -290,7 +290,7 @@ def prepare_data_for_ai(
 
     # 4) Select features
     if feature_columns is None:
-        feature_columns = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
+        feature_columns = ["close", "volume","RSI", "MACD", "MACD_Signal", "SMA"]
         feature_columns = [c for c in feature_columns if c in df.columns]
 
     # 5) Scale features
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     # -----------------------------
     # Test 4: Scale features
     # -----------------------------
-    features = ["close", "RSI", "MACD", "MACD_Signal", "SMA"]
+    features = ["close", "volume", "RSI", "MACD", "MACD_Signal", "SMA"]
     df_scaled, scaler = scale_features(df_clean, feature_columns=features)
     assert np.all((df_scaled[features] >= 0) & (df_scaled[features] <= 1)), "Scaling failed"
     print("scale_features passed")

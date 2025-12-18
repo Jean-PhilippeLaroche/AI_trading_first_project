@@ -15,7 +15,8 @@ Export dependencies:
 pip freeze > requirements.txt
 On other machines, install:
 pip install -r requirements.txt
-PyTorch version works with cpu, not cuda so need to install it manually
+PyTorch version works with cpu, not cuda so need to install it manually:
+pip3 install torch torchvision torchaudio --index url https://download.pytorch.org/whl/cu126
 
 
 # Logging & outputs

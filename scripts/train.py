@@ -304,7 +304,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         dropout: Dropout rate
     """
 
-    set_feature_names(["close", "RSI", "MACD", "MACD_Signal", "SMA"])
+    set_feature_names(["close", "volume", "RSI", "MACD", "MACD_Signal", "SMA"])
 
     # Initialize Transformer model
     model = TimeSeriesTransformerPooled(
