@@ -48,16 +48,26 @@ Note: added automatic opening, use manual way if needed shouldn't be the case
 
 # Run Commands
  - Larger model for better performance
-python main.py --ticker AAPL --d_model 256 --nhead 8 --num_layers 4 --dim_feedforward 1024
+python main.py --ticker MSFT --d_model 256 --nhead 8 --num_layers 4 --dim_feedforward 1024
 
  - Smaller model for faster training
 python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedforward 256
 
- - Adjust training parameters
-python main.py --ticker AAPL --epochs 30 --batch 128 --lr 5e-5
 
 # Hypertuning parameters
-python main.py --ticker AAPL --window=20 --train_size=0.8 --epochs=1 --batch=64 --lr=1e-4 --threshold=0.01 --balance=10000 --transaction_cost=0.02 --d_model=64 --nhead=4 --num_layers=2 --dim_feedforward=256 --dropout=0.1 --patience=20 --lr_scheduler_patience=5 --lr_scheduler_factor=0.5
+python main.py \
+  --ticker MSFT \
+  --window 120 \
+  --epochs 80 \
+  --batch 256 \
+  --lr 3e-4 \
+  --d_model 256 \
+  --nhead 8 \
+  --num_layers 6 \
+  --dim_feedforward 1024 \
+  --dropout 0.1 \
+  --threshold 0.01 \
+  --transaction_cost 0.0015
 
 # TO DO:
 1. Add forward testing with the best_model.pth
