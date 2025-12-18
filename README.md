@@ -1,3 +1,12 @@
+# Transformer-Based Intraday Trading Model
+
+This project explores the use of Transformer architectures for modeling high-frequency financial time series and evaluating intraday trading strategies.
+The model is trained on five years of historical one-minute market data, enriched with technical indicators such as RSI, MACD, and moving averages, and structured into sliding-window sequences to preserve temporal dynamics.
+The pipeline leverages a pooling-based Transformer to capture both global trends and strong local signals within each time window, while enabling efficient parallel training compared to recurrent models. 
+Beyond predictive accuracy, the project emphasizes interpretability through attention map visualizations and realism through a backtesting framework that incorporates transaction costs and portfolio evolution.
+The full end-to-end pipeline from data ingestion and feature engineering to model training, visualization, and trading evaluation is documented in an Excalidraw diagram.
+https://excalidraw.com/#json=4mQ57WtX6dZF32uV4L1DO,EDTs6uWyswa4nHoszKC7bw
+
 # Path
 No hardcoded absolute paths for exporting(like C:/Users/...).
 os.path.join(BASE_DIR, ...) so project works on any machine

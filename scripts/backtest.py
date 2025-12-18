@@ -153,7 +153,7 @@ class Backtester:
         """
         all_predictions_scaled = []
 
-        # Step 1: Prepare all sequences (fast on CPU)
+        # Step 1: Prepare all sequences
         num_timesteps = end_idx - start_idx
         logging.info(f"Preparing {num_timesteps} sequences for batch prediction...")
 
@@ -200,7 +200,7 @@ class Backtester:
             # Stack valid sequences into single batch tensor
             batch_tensor = torch.cat(valid_sequences, dim=0)  # Shape: (N, window, features)
 
-            # Predict entire batch at once (this is the fast part!)
+            # Predict entire batch at once
             with torch.no_grad():
                 batch_predictions = self.model(batch_tensor)  # Shape: (N,)
 
