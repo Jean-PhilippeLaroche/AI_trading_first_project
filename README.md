@@ -1,5 +1,4 @@
 # Transformer-Based Intraday Trading Model
-
 This project explores the use of Transformer architectures for modeling high-frequency financial time series and evaluating intraday trading strategies.
 The model is trained on five years of historical one-minute market data, enriched with technical indicators such as RSI, MACD, and moving averages, and structured into sliding-window sequences to preserve temporal dynamics.
 The pipeline leverages a pooling-based Transformer to capture both global trends and strong local signals within each time window, while enabling efficient parallel training compared to recurrent models. 

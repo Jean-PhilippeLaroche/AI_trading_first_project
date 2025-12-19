@@ -6,11 +6,13 @@ from ta.trend import MACD
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import warnings
+import sqlite3
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# -----------------------------
-# Block 1: Load stock data CSV
-# -----------------------------
+# --------------------
+# Load stock data CSV
+# --------------------
 def load_stock_csv(ticker, data_dir=None):
     """
     Load stock CSV into a DataFrame, auto-locating 'data/raw' if not specified.
@@ -50,6 +52,75 @@ def load_stock_csv(ticker, data_dir=None):
 
     df = pd.read_csv(file_path, index_col=0, parse_dates=True)
     logging.info(f"Loaded {len(df)} rows for {ticker} from {file_path}")
+
+    # Ensure columns we need exist
+    expected_cols = ["open", "high", "low", "close", "volume"]
+    for col in expected_cols:
+        if col not in df.columns:
+            logging.warning(f"Column {col} missing in {ticker} data")
+
+    return df
+
+
+def load_stock_sqlite(ticker, db_dir=None):
+    """
+    Load stock data from SQLite into a DataFrame.
+
+    Args:
+        ticker (str): Stock ticker symbol (table name).
+        db_dir (str, optional): Directory containing data.db.
+
+    Returns:
+        pd.DataFrame: DataFrame with stock data, indexed by date.
+    """
+
+    # Auto-locate data/processed and data.db
+    if db_dir is None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        found = False
+
+        # Walk up 3 levels to find project root
+        for _ in range(3):
+            processed_dir = os.path.join(base_dir, "data", "processed")
+            db_candidate = os.path.join(processed_dir, "data.db")
+
+            if os.path.exists(db_candidate):
+                db_path = db_candidate
+                found = True
+                break
+
+            base_dir = os.path.dirname(base_dir)
+
+        if not found:
+            logging.error("Could not find 'data/processed/data.db' in project tree.")
+            return None
+
+
+    # Connect to SQLite
+    try:
+        conn = sqlite3.connect(db_path)
+    except Exception as e:
+        logging.error(f"Failed to connect to SQLite database: {e}")
+        return None
+
+    # Load table
+    try:
+        query = f"SELECT * FROM {ticker}"
+        df = pd.read_sql(query, conn, parse_dates=["timestamp"])
+    except Exception as e:
+        logging.error(f"Failed to load {ticker} from SQLite: {e}")
+        return None
+    finally:
+        conn.close()
+
+    if df.empty:
+        logging.warning(f"No data found for {ticker} in database")
+        return None
+
+    # Match CSV loader behavior
+    df.set_index("timestamp", inplace=True)
+
+    logging.info(f"Loaded {len(df)} rows for {ticker} from SQLite database")
 
     # Ensure columns we need exist
     expected_cols = ["open", "high", "low", "close", "volume"]
@@ -249,6 +320,7 @@ def prepare_data_for_ai(
     data_dir=None,
     feature_columns=None,
     target_column="close",
+    SQLite=False,
     window_size=20,
     rsi_period=14,
     macd_fast=12,
@@ -264,11 +336,18 @@ def prepare_data_for_ai(
     Full pipeline to prepare stock data for AI training or validation.
     """
 
-    # 1) Load full raw dataframe
-    whole_df = load_stock_csv(ticker, data_dir)
-    if whole_df is None:
-        logging.error(f"CSV not found for {ticker}.")
-        return None, None, None
+    if SQLite is False:
+        # 1) Load full raw dataframe
+        whole_df = load_stock_csv(ticker, data_dir)
+        if whole_df is None:
+            logging.error(f"CSV not found for {ticker}.")
+            return None, None, None
+    elif SQLite:
+        # 1) Load full raw dataframe
+        whole_df = load_stock_sqlite(ticker, data_dir)
+        if whole_df is None:
+            logging.error(f"CSV not found for {ticker}.")
+            return None, None, None
 
     # 2) Compute indicators on FULL data (no leakage)
     whole_df = add_indicators(
@@ -325,15 +404,21 @@ if __name__ == "__main__":
     # -----------------------------
     # Test 1: Load CSV
     # -----------------------------
-    df = load_stock_csv(ticker)
-    assert df is not None, "Failed to load CSV"
-    assert len(df) > 0, "CSV loaded but empty"
+    df_csv = load_stock_csv(ticker)
+    assert df_csv is not None, "Failed to load CSV"
+    assert len(df_csv) > 0, "CSV loaded but empty"
     print("load_stock_csv passed")
 
     # -----------------------------
+    # Test 2: Load SQLite
+    df_sqlite = load_stock_sqlite(ticker)
+    assert df_sqlite is not None, "Failed to load database"
+    assert len(df_sqlite) > 0, "Databse loaded but empty"
+    print("load_stock_sqlite passed")
+    # -----------------------------
     # Test 2: Add indicators
     # -----------------------------
-    df_ind = add_indicators(df)
+    df_ind = add_indicators(df_sqlite)
     for col in ["RSI", "MACD", "MACD_Signal", "SMA"]:
         assert col in df_ind.columns, f"{col} not added"
     print("add_indicators passed")
@@ -348,9 +433,13 @@ if __name__ == "__main__":
     # -----------------------------
     # Test 4: Scale features
     # -----------------------------
+    print(df_clean.dtypes)
     features = ["close", "volume", "RSI", "MACD", "MACD_Signal", "SMA"]
     df_scaled, scaler = scale_features(df_clean, feature_columns=features)
-    assert np.all((df_scaled[features] >= 0) & (df_scaled[features] <= 1)), "Scaling failed"
+    assert len(features) > 0, "No numeric features found to scale"
+    assert df_scaled[features].isnull().sum().sum() == 0, "Numeric features contain NaNs"
+    # Allow tiny numerical errors
+    assert np.all(np.isclose(df_scaled[features], df_scaled[features].clip(0, 1))), "Scaling failed"
     print("scale_features passed")
 
     # -----------------------------
@@ -371,4 +460,4 @@ if __name__ == "__main__":
     assert y_full.shape[0] > 0, "Pipeline returned empty y"
     print("prepare_data_for_ai pipeline passed")
 
-    print("\nAll tests passed successfully! 🎉")
+    print("\nAll tests passed successfully!")
