@@ -8,19 +8,22 @@ import numpy as np
 import json
 
 
-def find_file(filename, start_dir=None, max_levels=5):
+def find_file(filename, start_dir=None):
+    """
+    Recursively search for a file in the project directory.
+    """
     if start_dir is None:
+        # Assume this file lives somewhere inside the project
         start_dir = os.path.dirname(os.path.abspath(__file__))
 
-    current = start_dir
+        # Go to project root (one level above utils / module)
+        start_dir = os.path.dirname(start_dir)
 
-    for _ in range(max_levels):
-        candidate = os.path.join(current, filename)
-        if os.path.exists(candidate):
-            return candidate
-        current = os.path.dirname(current)
+    for root, _, files in os.walk(start_dir):
+        if filename in files:
+            return os.path.join(root, filename)
 
-    raise FileNotFoundError(f"{filename} not found up to {max_levels} levels above {start_dir}")
+    raise FileNotFoundError(f"{filename} not found in project starting at {start_dir}")
 
 
 def model_interpretation(
