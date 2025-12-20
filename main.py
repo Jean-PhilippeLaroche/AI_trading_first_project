@@ -86,11 +86,15 @@ def main(
     # ============================================================
     t0 = time.time()
     logging.info("Step 2: Preparing training sequences")
+
+    # Using SQLite database if ticker is AAPL or MSFT
+    using_sqlite = ticker in ("AAPL", "MSFT")
+
     X_train, y_train, scaler = prepare_data_for_ai(
         ticker,
         data_dir=None,
         feature_columns=None,
-        SQLite=True,
+        SQLite=using_sqlite,
         target_column="close",
         window_size=window_size,
         start_idx=0,
@@ -112,7 +116,7 @@ def main(
         ticker,
         data_dir=None,
         feature_columns=None,
-        SQLite=True,
+        SQLite=using_sqlite,
         target_column="close",
         window_size=window_size,
         start_idx=split_idx,
@@ -168,7 +172,7 @@ def main(
     print(f"\033[91mStep 5: {time.time() - t0}\033[0m")
 
     # ============================================================
-    # STEP 6: Run backtest on VALIDATION period only
+    # STEP 6: Backtest run on validation period
     #         Backtest DF = df_clean (recomputed to avoid leakages)
     #         Period = [split_idx : n_total]
     # ============================================================
@@ -312,7 +316,7 @@ def main(
     logging.info(f"Transaction Cost:       {transaction_cost * 100}%")
     logging.info("=" * 70 + "\n")
 
-    logging.info("Pipeline finished successfully!")
+    logging.info("Pipeline finished successfully")
 
 
 # ---------------------------
@@ -320,7 +324,7 @@ def main(
 # ---------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Stock Trading AI - Train Transformer model and backtest strategy",
+        description="Financial time series modeling AI - Train Transformer model and backtest strategy",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 

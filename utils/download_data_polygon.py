@@ -23,7 +23,6 @@ logging.basicConfig(
 POLYGON_API_KEY = "Set_custom_API_key"
 if not POLYGON_API_KEY:
     logging.error("Environment variable POLYGON_API_KEY not set. Please set it before running.")
-    # We don't exit immediately to allow import-time checking by external tools, but main will exit.
 
 POLYGON_BASE = "https://api.polygon.io"
 
@@ -235,7 +234,7 @@ if __name__ == "__main__":
     for ticker in args.tickers:
         output_path = os.path.join(args.output_dir, f"{ticker}.csv")
 
-        # ----- Caching check -----
+        # Caching check
         if os.path.exists(output_path):
             logging.info(f"File already exists for {ticker}, skipping download: {output_path}")
             continue

@@ -51,7 +51,7 @@ def load_stock_csv(ticker, data_dir=None):
         return None
 
     df = pd.read_csv(file_path, index_col=0, parse_dates=True)
-    logging.info(f"Loaded {len(df)} rows for {ticker} from {file_path}")
+    logging.info(f"Loaded {len(df)} rows for {ticker} from {ticker}.csv")
 
     # Ensure columns we need exist
     expected_cols = ["open", "high", "low", "close", "volume"]
@@ -349,7 +349,7 @@ def prepare_data_for_ai(
             logging.error(f"CSV not found for {ticker}.")
             return None, None, None
 
-    # 2) Compute indicators on FULL data (no leakage)
+    # 2) Compute indicators on full data to avoid leakage
     whole_df = add_indicators(
         whole_df,
         rsi_period=rsi_period,
@@ -362,7 +362,7 @@ def prepare_data_for_ai(
 
     whole_df = clean_data(whole_df)
 
-    # 3) Slice AFTER indicator computation
+    # 3) Slice after indicator computation
     s = start_idx if start_idx is not None else 0
     e = end_idx if end_idx is not None else len(whole_df)
     df = whole_df.iloc[s:e].copy()
@@ -380,7 +380,7 @@ def prepare_data_for_ai(
         logging.info("Created and fitted new scaler")
     else:
         # Validation phase: use existing scaler (no fitting)
-        logging.info("Using provided scaler (no refitting)")
+        logging.info("Using provided scaler")
 
     df_scaled = df.copy()
     df_scaled[feature_columns] = scaler.transform(df[feature_columns])
@@ -399,7 +399,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     # Example ticker
-    ticker = "AAPL"
+    ticker = "MSFT"
 
     # -----------------------------
     # Test 1: Load CSV
@@ -411,6 +411,7 @@ if __name__ == "__main__":
 
     # -----------------------------
     # Test 2: Load SQLite
+    # -----------------------------
     df_sqlite = load_stock_sqlite(ticker)
     assert df_sqlite is not None, "Failed to load database"
     assert len(df_sqlite) > 0, "Databse loaded but empty"
@@ -460,4 +461,4 @@ if __name__ == "__main__":
     assert y_full.shape[0] > 0, "Pipeline returned empty y"
     print("prepare_data_for_ai pipeline passed")
 
-    print("\nAll tests passed successfully!")
+    print("\nAll tests passed successfully")

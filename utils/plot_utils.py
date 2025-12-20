@@ -112,7 +112,7 @@ def plot_return_distribution(returns, bins=50):
     Plot histogram of daily returns.
 
     Args:
-        returns (list or np.array): daily returns (can be log or simple returns)
+        returns (list or np.array): daily returns, can be log or simple returns
         bins (int): number of bins in histogram
     """
     plt.figure(figsize=(6, 4))
@@ -124,9 +124,9 @@ def plot_return_distribution(returns, bins=50):
     plt.tight_layout()
 
 
-# ------------------ #
-# Quick test section #
-# ------------------ #
+# ------------------
+# CLI
+# ------------------
 if __name__ == "__main__":
 
     # Generate fake data for testing
@@ -143,8 +143,6 @@ if __name__ == "__main__":
     # Test first 2 functions
     plot_signals(rng, actual_prices, signals)
     plot_price_vs_prediction(rng, actual_prices, predicted_prices)
-
-    # --- New tests ---
 
     # Portfolio equity curve
     portfolio_values = np.cumsum(np.random.randn(50)) + 1000
@@ -163,5 +161,5 @@ if __name__ == "__main__":
     returns = np.diff(actual_prices) / actual_prices[:-1]
     plot_return_distribution(returns)
 
-    # Show all plots at once
+    # Show everything at once
     plt.show()

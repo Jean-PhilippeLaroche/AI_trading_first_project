@@ -11,7 +11,7 @@ The training process:
 TODO:
 - Add support for multiple tickers (portfolio-level training).
 - Support multiple walk-forward folds (not just one train/val split).
-- Integrate wandb for richer experiment tracking if needed.
+- Integrate wandb for richer experiment tracking
 - Add multi-horizon forecasting (predict multiple days ahead).
 - Add feature-wise attention / embedding layers for indicators.
 """
@@ -19,7 +19,6 @@ TODO:
 # -----------------------------
 # Imports
 # -----------------------------
-import os
 import logging
 import numpy as np
 import torch
@@ -94,36 +93,14 @@ logging.basicConfig(
 # -----------------------------
 # Device config
 # -----------------------------
-# Use GPU if available (important for training speed!)
+# Use GPU if available (important for training speed, on CPU it's basically impossible)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logging.info(f"Using device: {DEVICE}")
 
 
 # -----------------------------
-# Block 2: Walk-forward validation + Experiment Logging
+# Block 2: Experiment Logging
 # -----------------------------
-
-
-def walk_forward_split(X, y, train_size=0.8):
-    """
-    Perform a walk-forward split for time series.
-
-    Args:
-        X (np.array): Feature sequences of shape (samples, window, features).
-        y (np.array): Target array of shape (samples,).
-        train_size (float): Fraction of data to use for training (0 < train_size < 1).
-
-    Returns:
-        (X_train, y_train, X_val, y_val)
-    """
-    split_idx = int(len(X) * train_size)
-
-    X_train, y_train = X[:split_idx], y[:split_idx]
-    X_val, y_val = X[split_idx:], y[split_idx:]
-
-    return X_train, y_train, X_val, y_val
-
-
 def get_tensorboard_writer(log_dir="runs"):
     """
     Create a TensorBoard writer for experiment logging.
@@ -150,9 +127,8 @@ def get_tensorboard_writer(log_dir="runs"):
 
 class PositionalEncoding(nn.Module):
     """
-    Adds positional information to the input embeddings.
-    Since Transformers have no inherent sense of order (unlike RNNs),
-    we need to inject position information.
+    Adds positional information to the input embeddings, need to inject position
+    information because Transformers have no inherent sense of order
     """
 
     def __init__(self, d_model, max_len=5000, dropout=0.1):
@@ -181,7 +157,7 @@ class TimeSeriesTransformerPooled(nn.Module):
     """
     Variant that uses both mean and max pooling over the sequence
     instead of just taking the last timestep.
-    Often more robust for capturing overall trends.
+    More robust for capturing overall trends.
     """
 
     def __init__(
@@ -322,7 +298,7 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
 
     criterion = nn.MSELoss()
 
-    # AdamW optimizer (better for Transformers)
+    # AdamW optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
     # Learning rate scheduler
@@ -529,48 +505,69 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    # ---- Launch TensorBoard automatically ----
+    # Launch TensorBoard automatically
     tb_process = launch_tensorboard(logdir="runs", port=6006)
 
-    # ---- Test walk_forward_split ----
-    X_dummy = np.random.rand(100, 20, 5)  # 100 samples, window=20, 5 features
-    y_dummy = np.random.rand(100)
+    # Create dummy train/val data
+    logging.info("Creating dummy train/validation data...")
 
-    X_train, y_train, X_val, y_val = walk_forward_split(X_dummy, y_dummy, train_size=0.8)
+    # Simulate full dataset
+    total_samples = 100
+    window_size = 20
+    num_features = 5
+    train_size = 0.8
 
+    # Generate dummy data
+    X_full = np.random.rand(total_samples, window_size, num_features)
+    y_full = np.random.rand(total_samples)
+
+    # Split manually
+    split_idx = int(total_samples * train_size)
+
+    X_train = X_full[:split_idx]
+    y_train = y_full[:split_idx]
+    X_val = X_full[split_idx:]
+    y_val = y_full[split_idx:]
+
+    # Verify split
     assert len(X_train) == 80, f"Expected 80 train samples, got {len(X_train)}"
     assert len(y_train) == 80, f"Expected 80 train targets, got {len(y_train)}"
     assert len(X_val) == 20, f"Expected 20 validation samples, got {len(X_val)}"
     assert len(y_val) == 20, f"Expected 20 validation targets, got {len(y_val)}"
 
-    logging.info("walk_forward_split passed all tests.")
+    logging.info("Data split verification passed.")
 
-    # ---- Test TensorBoard writer ----
+    # Test TensorBoard writer
     writer = get_tensorboard_writer()
     writer.add_scalar("Test/Loss", 0.123, 1)  # log dummy value
     writer.close()
 
-    logging.info("TensorBoard writer test completed. Check 'runs/' folder for logs.")
+    logging.info("TensorBoard writer test completed. Check 'runs/' folder for logs")
 
-    # ---- Train the Transformer model with dummy data ----
+    # Train the Transformer model with the dummy data
     logging.info("Starting dummy training loop...")
     writer = get_tensorboard_writer()  # reopen writer for training logs
     model = train_model(
         X_train, y_train, X_val, y_val,
-        input_size=X_train.shape[2],  # number of features
-        epochs=5,  # keep short for testing
-        batch_size=32,  # Larger batch for Transformer
-        lr=1e-4,  # Lower LR for Transformer
+        input_size=X_train.shape[2],
+        epochs=5,
+        batch_size=32,
+        lr=1e-4,
         writer=writer,
         scaler=None,
-        d_model=64,  # Smaller for testing
+        d_model=64,
         nhead=4,
-        num_layers=2
+        num_layers=2,
+        dim_feedforward=256,
+        dropout=0.1,
+        early_stopping_patience=10,
+        lr_scheduler_patience=3,
+        lr_scheduler_factor=0.5
     )
     writer.close()
     logging.info("Dummy training completed.")
 
-    # ---- Keep TensorBoard alive until user stops script ----
+    # Keep TensorBoard alive until script stops
     try:
         logging.info("TensorBoard running. Press Ctrl+C to stop.")
         while True:

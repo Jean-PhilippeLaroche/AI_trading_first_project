@@ -4,15 +4,15 @@ backtest.py
 Proper backtesting framework for stock trading strategies.
 Simulates step-by-step trading with realistic constraints:
 - No lookahead bias (predict one day at a time)
-- Transaction costs (2% for commission + bid-ask spread)
+- Transaction costs
 - Position sizing constraints
 - Comprehensive performance metrics
 
 Key metrics calculated:
 - Total return
-- Expected return (average daily return)
-- Sharpe ratio (risk-adjusted return)
-- Max drawdown (worst peak-to-trough loss)
+- Expected return
+- Sharpe ratio
+- Max drawdown
 - Win rate (% of profitable trades)
 """
 
@@ -374,7 +374,7 @@ class Backtester:
         all_predicted_prices = self.predict_all_prices_batch(
             start_idx,
             end_idx,
-            batch_size=1024  # 512 (slower, less memory) to 4096 (faster, more memory)
+            batch_size=1024
         )
 
         # Now loop through and process signals/trades
@@ -574,7 +574,7 @@ if __name__ == "__main__":
     window_size = 60
 
     initial_balance = 10_000
-    transaction_cost = 0.02  # 2%
+    transaction_cost = 0.005  # 0.5%
     threshold = 0.01  # 1%
     epochs = 0  # just for the summary JSON
 
@@ -599,7 +599,7 @@ if __name__ == "__main__":
     logging.info(f"Using feature columns: {feature_columns}")
 
     # -------------------
-    # Fit scaler on TRAIN slice only (no leakage)
+    # Fit scaler on train slice only to prevent leakage
     # -------------------
     train_df = df_clean.iloc[:split_idx]
     scaler = MinMaxScaler()
@@ -651,10 +651,10 @@ if __name__ == "__main__":
             # Add offset to base scaled close
             pred_scaled = base_scaled + offset
 
-            # Optional: clamp to valid scaler range [0, 1]
+            # Clamp to valid scaler range [0, 1]
             pred_scaled = torch.clamp(pred_scaled, 0.0, 1.0)
 
-            return pred_scaled  # (batch,)
+            return pred_scaled
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -748,4 +748,4 @@ if __name__ == "__main__":
         backtest_results['trades'].to_csv(trades_file, index=False)
         logging.info(f"Trade history saved to {trades_file}")
 
-    logging.info("Backtest-only pipeline finished successfully!")
+    logging.info("Backtest-only pipeline finished successfully")

@@ -52,20 +52,27 @@ python main.py --ticker MSFT --d_model 256 --nhead 8 --num_layers 4 --dim_feedfo
  - Smaller model for faster training
 python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedforward 256
 
+# Ticker choice
+If AAPL or MSFT is selected as the ticker, the data will be automatically loaded from the
+SQLite database. Other tickers will be loaded from the .csv files
+
 
 # Hypertuning parameters
-python main.py \
-  --ticker MSFT \
-  --window 120 \
-  --epochs 80 \
-  --batch 256 \
-  --lr 3e-4 \
-  --d_model 256 \
-  --nhead 8 \
-  --num_layers 6 \
-  --dim_feedforward 1024 \
-  --dropout 0.1 \
-  --threshold 0.01 \
+
+python hyperparameter_tuning.py --ticker MSFT --n_trials 50
+
+ - List of parameters:
+  --ticker MSFT
+  --window 120
+  --epochs 80
+  --batch 256
+  --lr 3e-4
+  --d_model 256
+  --nhead 8
+  --num_layers 6
+  --dim_feedforward 1024
+  --dropout 0.1
+  --threshold 0.02
   --transaction_cost 0.0015
 
 # TO DO:
