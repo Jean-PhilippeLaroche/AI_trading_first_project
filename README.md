@@ -50,7 +50,12 @@ Note: added automatic opening, use manual way if needed shouldn't be the case
 python main.py --ticker MSFT --d_model 256 --nhead 8 --num_layers 4 --dim_feedforward 1024
 
  - Smaller model for faster training
-python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedforward 256
+python main.py --ticker AAPL --d_model 64 --nhead 4 --num_layers 2 --dim_feedforward 256 --no_viz
+
+ --- Visualization commands:
+ --no_viz: no plotting at the end
+ --model_interpretation: calls main_interpretation, export weights to a .json file
+and the parameters to a .csv file from best_model.pth
 
 # Ticker choice
 If AAPL or MSFT is selected as the ticker, the data will be automatically loaded from the

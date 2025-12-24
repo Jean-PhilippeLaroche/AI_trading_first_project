@@ -26,34 +26,44 @@ def find_file(filename, start_dir=None):
     raise FileNotFoundError(f"{filename} not found in project starting at {start_dir}")
 
 
-def model_interpretation(
-        ticker="AAPL", train_size=0.8, window_size=20, d_model=64, nhead=4, num_layers=2
-    ):
+def model_interpretation(ticker="AAPL", train_size=0.8, window_size=20,
+                         dim_feedforward=256, d_model=64, nhead=4,
+                         num_layers=2, input_size=None):
 
-    df_raw = load_stock_csv(ticker)
-    if df_raw is None:
-        logging.error("Could not load raw CSV for ticker; exiting.")
+    if input_size is None:
 
-    df_tmp = add_indicators(df_raw)
-    df_tmp = clean_data(df_tmp)
+        # Using SQLite database if ticker is AAPL or MSFT
+        using_sqlite = ticker in ("AAPL", "MSFT")
 
-    n_total = len(df_tmp)
-    split_idx = int(n_total * train_size)
+        df_raw = load_stock_csv(ticker)
+        if df_raw is None:
+            logging.error("Could not load raw CSV for ticker; exiting.")
 
-    X_train, y_train, scaler = prepare_data_for_ai(
-            ticker=ticker,
-            data_dir=None,
-            feature_columns=None,
-            target_column="close",
-            window_size=window_size,
-            start_idx=0,
-            end_idx=split_idx
-        )
-    input_size = X_train.shape[2]
-    d_model = 64
-    nhead = 4
-    num_layers = 2
-    dim_feedforward = 256
+        df_tmp = add_indicators(df_raw)
+        df_tmp = clean_data(df_tmp)
+
+        n_total = len(df_tmp)
+        split_idx = int(n_total * train_size)
+
+        X_train, y_train, scaler = prepare_data_for_ai(
+                ticker=ticker,
+                data_dir=None,
+                feature_columns=None,
+                target_column="close",
+                window_size=window_size,
+                SQLite=using_sqlite,
+                start_idx=0,
+                end_idx=split_idx
+            )
+        input_size = X_train.shape[2]
+
+    else:
+        input_size=input_size
+
+    d_model = d_model
+    nhead = nhead
+    num_layers = num_layers
+    dim_feedforward = dim_feedforward
 
     file_path = find_file("best_model.pth")
 
@@ -67,13 +77,13 @@ def model_interpretation(
         json.dump(params_json, f, indent=2)
 
 
-def extract_model_parameters(json_path='model_weights.json'):
+def extract_model_parameters(num_layers=2, json_path='model_weights.json'):
     """
     Extract and organize model parameters from the JSON file.
 
     Args:
         json_path: Path to the model weights JSON file
-
+        num_layers: Number of layers of the trained model
     Returns:
         Dictionary with organized model parameters
     """
@@ -103,9 +113,6 @@ def extract_model_parameters(json_path='model_weights.json'):
     # Extract positional encoding (if stored)
     if 'pos_encoder.pe' in params_np:
         model_params['positional_encoding']['PE'] = params_np['pos_encoder.pe']
-
-    # Extract transformer encoder layers
-    num_layers = 2  # Based on your config
 
     for layer_idx in range(num_layers):
         layer_params = {
@@ -333,22 +340,36 @@ def export_parameters_to_markdown(model_params, output_file='model_params.md'):
 
     print(f"\nMarkdown table exported to {output_file}")
 
-if __name__ == "__main__":
 
-    model_interpretation()
+def main_interpretation(ticker="AAPL", train_size=0.8, window_size=20,
+                        dim_feedforward=256, d_model=64, nhead=4, num_layers=2,
+                        file="csv", input_size=None):
+    """
+    Convenience function to run full model interpretation.
+    """
+
+    # Creating model_weights.json
+    model_interpretation(ticker, train_size, window_size,
+                         dim_feedforward, d_model, nhead, num_layers,
+                         input_size)
 
     # Extract parameters
-    model_params, raw_params = extract_model_parameters('model_weights.json')
+    model_params, raw_params = extract_model_parameters(num_layers, 'model_weights.json')
 
     # Print parameter shapes
     print_parameter_shapes(model_params)
 
-    # Export to LaTeX (if needed)
-    #export_parameters_to_latex(model_params)
+    # Export to desired file
+    if file == "csv":
+        export_parameters_to_csv(model_params=model_params)
+    elif file == "markdown":
+        export_parameters_to_markdown(model_params=model_params)
+    elif file == "LaTeX":
+        export_parameters_to_latex(model_params=model_params)
+    else:
+        print(f"{file} incorrect or unsupported")
 
-    # Export to csv (if needed)
-    export_parameters_to_csv(model_params)
 
-    # Export to markdown (if needed)
-    #export_parameters_to_markdown(model_params)
+if __name__ == "__main__":
 
+    main_interpretation(file="csv")

@@ -13,6 +13,7 @@ from scripts.evaluate import visualize_model_performance
 from scripts.backtest import run_backtest
 import time
 
+from utils.model_interpretation import main_interpretation
 
 # ---------------------------
 # Logging
@@ -42,11 +43,16 @@ def main(
         dropout=0.1,
         patience=20,
         lr_scheduler_patience=5,
-        lr_scheduler_factor=0.5
+        lr_scheduler_factor=0.5,
+        model_interpret=False
 ):
+
+
     logging.info(f"Starting pipeline for {ticker}")
     logging.info(f"Configuration: window={window_size}, epochs={epochs}, threshold={threshold * 100}%")
     logging.info(f"Transformer config: d_model={d_model}, nhead={nhead}, num_layers={num_layers}")
+    if model_interpret:
+        print("Model will be interpreted automatically")
 
     # ---- Launch TensorBoard automatically ----
     tb_process = launch_tensorboard(logdir="runs", port=6006)
@@ -291,8 +297,13 @@ def main(
     print(f"\033[91mStep 9: {time.time() - t0}\033[0m")
 
     # ============================================================
-    # STEP 10: Summary
+    # STEP 10: Summary + model interpretation
     # ============================================================
+    if model_interpret:
+        main_interpretation(ticker, train_size, window_size,
+                            dim_feedforward, d_model, nhead, num_layers,
+                            file="csv", input_size=X_train.shape[2])
+
     logging.info("\n" + "=" * 70)
     logging.info("PIPELINE COMPLETE - SUMMARY")
     logging.info("=" * 70)
@@ -373,6 +384,8 @@ if __name__ == "__main__":
     # Visualization
     parser.add_argument("--no_viz", action="store_true",
                         help="Disable plotting at end")
+    parser.add_argument("--model_interpretation", action="store_true",
+                        help="Enable model interpretation")
 
     args = parser.parse_args()
 
@@ -387,10 +400,14 @@ if __name__ == "__main__":
         initial_balance=args.balance,
         transaction_cost=args.transaction_cost,
         visualize=not args.no_viz,
+        model_interpret=args.model_interpretation,
         # Transformer hyperparameters
         d_model=args.d_model,
         nhead=args.nhead,
         num_layers=args.num_layers,
         dim_feedforward=args.dim_feedforward,
-        dropout=args.dropout
+        dropout=args.dropout,
+        patience=args.patience,
+        lr_scheduler_patience=args.lr_scheduler_patience,
+        lr_scheduler_factor=args.lr_scheduler_factor
     )
