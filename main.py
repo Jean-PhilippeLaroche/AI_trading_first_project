@@ -26,25 +26,27 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # ---------------------------
 def main(
         ticker="AAPL",
-        window_size=20,
+        window_size=120,
         train_size=0.8,
-        epochs=20,
-        batch_size=64,
-        lr=1e-4,
-        threshold=0.01,
+        epochs=80,
+        batch_size=256,
+        lr=3e-4,
+        threshold=0.02,
         initial_balance=10000,
-        transaction_cost=0.02,
+        transaction_cost=0.0015,
         visualize=True,
         # Transformer hyperparameters
-        d_model=128,
+        d_model=256,
         nhead=8,
-        num_layers=3,
-        dim_feedforward=512,
+        num_layers=6,
+        dim_feedforward=1024,
         dropout=0.1,
         patience=20,
-        lr_scheduler_patience=5,
+        lr_scheduler_patience=6,
         lr_scheduler_factor=0.5,
-        model_interpret=False
+        model_interpret=False,
+        grad_clip_percentile=95,
+        use_adaptive_clipping=True
 ):
 
 
@@ -52,7 +54,7 @@ def main(
     logging.info(f"Configuration: window={window_size}, epochs={epochs}, threshold={threshold * 100}%")
     logging.info(f"Transformer config: d_model={d_model}, nhead={nhead}, num_layers={num_layers}")
     if model_interpret:
-        print("Model will be interpreted automatically")
+        logging.info("Model will be interpreted automatically after backtesting")
 
     # ---- Launch TensorBoard automatically ----
     tb_process = launch_tensorboard(logdir="runs", port=6006)
@@ -162,7 +164,9 @@ def main(
         dropout=dropout,
         early_stopping_patience=patience,
         lr_scheduler_patience=lr_scheduler_patience,
-        lr_scheduler_factor=lr_scheduler_factor
+        lr_scheduler_factor=lr_scheduler_factor,
+        grad_clip_percentile=grad_clip_percentile,
+        use_adaptive_clipping=use_adaptive_clipping
     )
 
     if model is None:
@@ -340,33 +344,33 @@ if __name__ == "__main__":
     )
 
     # Data parameters
-    parser.add_argument("--ticker", type=str, default="AAPL",
+    parser.add_argument("--ticker", type=str, default="MSFT",
                         help="Stock ticker symbol")
-    parser.add_argument("--window", type=int, default=60,
+    parser.add_argument("--window", type=int, default=120,
                         help="Window size for sequences")
     parser.add_argument("--train_size", type=float, default=0.8,
                         help="Fraction of data for training (rest for validation)")
 
     # Training parameters
-    parser.add_argument("--epochs", type=int, default=20,
+    parser.add_argument("--epochs", type=int, default=80,
                         help="Number of training epochs")
-    parser.add_argument("--batch", type=int, default=64,
+    parser.add_argument("--batch", type=int, default=256,
                         help="Batch size for training")
-    parser.add_argument("--lr", type=float, default=1e-4,
+    parser.add_argument("--lr", type=float, default=3e-4,
                         help="Learning rate")
-    parser.add_argument("--lr_scheduler_patience", type=int, default=5,
+    parser.add_argument("--lr_scheduler_patience", type=int, default=6,
                         help="Learning rate reduced after fixed number of epoch without improvement")
     parser.add_argument("--lr_scheduler_factor", type=float, default=0.5,
                         help="Learning rate")
 
     # Transformer hyperparameters
-    parser.add_argument("--d_model", type=int, default=128,
+    parser.add_argument("--d_model", type=int, default=256,
                         help="Transformer model dimension")
     parser.add_argument("--nhead", type=int, default=8,
                         help="Number of attention heads")
-    parser.add_argument("--num_layers", type=int, default=3,
+    parser.add_argument("--num_layers", type=int, default=6,
                         help="Number of transformer layers")
-    parser.add_argument("--dim_feedforward", type=int, default=512,
+    parser.add_argument("--dim_feedforward", type=int, default=1024,
                         help="Feedforward network dimension")
     parser.add_argument("--dropout", type=float, default=0.1,
                         help="Dropout rate")
@@ -376,10 +380,16 @@ if __name__ == "__main__":
                         help="Relative threshold for buy/sell signals (e.g., 0.02 = 2%%)")
     parser.add_argument("--balance", type=float, default=10000,
                         help="Initial balance for backtesting")
-    parser.add_argument("--transaction_cost", type=float, default=0.02,
+    parser.add_argument("--transaction_cost", type=float, default=0.0015,
                         help="Transaction cost as fraction (e.g., 0.02 = 2%%)")
     parser.add_argument("--patience", type=int, default=20,
                         help="Early stopping after fixed number of epoch without improvement")
+
+    # Gradient clipping parameters
+    parser.add_argument("--grad_clip_percentile", type=float, default=95,
+                        help="Percentile for adaptive gradient clipping (ex. 95)")
+    parser.add_argument("--no_adaptive_clipping", action="store_true",
+                        help="Disable adaptive gradient clipping")
 
     # Visualization
     parser.add_argument("--no_viz", action="store_true",
@@ -409,5 +419,7 @@ if __name__ == "__main__":
         dropout=args.dropout,
         patience=args.patience,
         lr_scheduler_patience=args.lr_scheduler_patience,
-        lr_scheduler_factor=args.lr_scheduler_factor
+        lr_scheduler_factor=args.lr_scheduler_factor,
+        grad_clip_percentile =args.grad_clip_percentile,
+        use_adaptive_clipping =not args.no_adaptive_clipping
     )

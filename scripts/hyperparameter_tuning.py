@@ -50,12 +50,15 @@ def objective(trial, ticker, data_dir=None):
     learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True)
     batch_size = trial.suggest_categorical('batch_size', [64, 128, 256, 512])
 
-    # Early stopping (to speed up bad configs)
-    early_stopping_patience = trial.suggest_int('early_stopping_patience', 10, 25)
-
     # Trading hyperparameters
     threshold = trial.suggest_float('threshold', 0.005, 0.05)
     transaction_cost = trial.suggest_float('transaction_cost', 0.0005, 0.01)
+
+    # Gradient clipping
+    grad_clip_percentile = trial.suggest_float('grad_clip_percentile', 90, 99)
+
+    # Early stopping
+    early_stopping_patience = 15
 
     # Constraint: d_model must be divisible by nhead
     if d_model % nhead != 0:
@@ -78,6 +81,7 @@ def objective(trial, ticker, data_dir=None):
     logging.info(f"  dropout: {dropout:.3f}")
     logging.info(f"  learning_rate: {learning_rate:.6f}")
     logging.info(f"  batch_size: {batch_size}")
+    logging.info(f"  grad_clip_percentile: {grad_clip_percentile:.1f}")
     logging.info(f"  threshold: {threshold:.3f}")
     logging.info(f"  transaction_cost: {transaction_cost:.4f}")
 
@@ -136,7 +140,7 @@ def objective(trial, ticker, data_dir=None):
         # ============================================================
         # STEP 3: TRAIN MODEL
         # ============================================================
-        # Use fewer epochs during tuning (faster)
+        # Using fewer epochs during tuning (faster)
         # Early stopping will reveal good models anyway
         model = train_model(
             X_train, y_train, X_val, y_val,
@@ -153,7 +157,9 @@ def objective(trial, ticker, data_dir=None):
             scaler=scaler,
             early_stopping_patience=early_stopping_patience,
             lr_scheduler_patience=max(3, early_stopping_patience // 2),
-            lr_scheduler_factor=0.5
+            lr_scheduler_factor=0.5,
+            grad_clip_percentile=grad_clip_percentile,
+            use_adaptive_clipping=True
         )
 
         if model is None:

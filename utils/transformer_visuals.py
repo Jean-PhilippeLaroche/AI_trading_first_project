@@ -121,7 +121,7 @@ def compute_feature_importance(batch_X, attn_weights):
     timestep_importance = timestep_importance.mean(dim=0)  # (seq_len,)
 
     # Now attribute timestep importance to features
-    # Use absolute values of input features as a proxy for their contribution
+    # Using absolute values of input features as a proxy for their contribution
     # Weight each feature by the attention at its timestep
 
     # Get absolute feature values averaged across batch: (seq_len, num_features)
@@ -169,13 +169,6 @@ def log_feature_importance_to_tensorboard(writer, batch_X, attn_weights, epoch):
                           feature_importance[i],
                           epoch)
 
-    # Log all features as a bar chart (using scalars with common prefix)
-    # This will be grouped nicely in TensorBoard
-    for i, feature_name in enumerate(_feature_names):
-        writer.add_scalar(f'FeatureImportance_Summary/{feature_name}',
-                          feature_importance[i],
-                          epoch)
-
 
 def get_feature_importance_history():
     """
@@ -193,7 +186,6 @@ def get_feature_importance_history():
 def reset_feature_tracking():
     """
     Reset feature importance tracking.
-    Call this at the start of a new training run.
     """
     global _feature_importance_history
     _feature_importance_history = []

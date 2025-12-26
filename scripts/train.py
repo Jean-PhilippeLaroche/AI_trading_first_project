@@ -16,9 +16,6 @@ TODO:
 - Add feature-wise attention / embedding layers for indicators.
 """
 
-# -----------------------------
-# Imports
-# -----------------------------
 import logging
 import numpy as np
 import torch
@@ -38,6 +35,31 @@ from utils.transformer_visuals import (
     set_feature_names,
     log_feature_importance_to_tensorboard
 )
+
+
+def adaptive_grad_clip(model, percentile=95):
+    """
+    Adaptive gradient clipping based on gradient distribution.
+
+    Args:
+        model: PyTorch model
+        percentile: Percentile to clip at (default: 95)
+
+    Returns:
+        float: Clip value used (for logging)
+    """
+    grads = []
+    for param in model.parameters():
+        if param.grad is not None:
+            grads.append(param.grad.view(-1).abs())
+
+    if grads:
+        all_grads = torch.cat(grads)
+        clip_value = torch.quantile(all_grads, percentile / 100.0)
+        torch.nn.utils.clip_grad_value_(model.parameters(),
+                                        clip_value=clip_value.item())
+        return clip_value.item()
+    return None
 
 
 def launch_tensorboard(logdir="runs", port=6006):
@@ -257,7 +279,9 @@ class TimeSeriesTransformerPooled(nn.Module):
 def train_model(X_train, y_train, X_val, y_val, input_size,
                 epochs=20, batch_size=64, lr=1e-4, writer=None, scaler=None,
                 early_stopping_patience=20, lr_scheduler_patience=5, lr_scheduler_factor=0.5,
-                d_model=128, nhead=8, num_layers=3, dim_feedforward=512, dropout=0.1):
+                d_model=128, nhead=8, num_layers=3, dim_feedforward=512, dropout=0.1,
+                grad_clip_percentile=95, use_adaptive_clipping=True
+                ):
     """
     Train the Transformer model.
 
@@ -266,8 +290,8 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         X_val, y_val: Validation data
         input_size: Number of input features
         epochs: Number of training epochs
-        batch_size: Batch size (can be larger for Transformers)
-        lr: Learning rate (lower for Transformers, typically 1e-4)
+        batch_size: Batch size
+        lr: Learning rate
         writer: TensorBoard writer
         scaler: Data scaler (for inverse transform)
         early_stopping_patience: Early stopping patience
@@ -278,6 +302,8 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         num_layers: Number of transformer layers
         dim_feedforward: Feedforward dimension
         dropout: Dropout rate
+        grad_clip_percentile: Percentile for adaptive clipping (default: 95)
+        use_adaptive_clipping: use adaptive clipping or not (default: True)
     """
 
     set_feature_names(["close", "volume", "RSI", "MACD", "MACD_Signal", "SMA"])
@@ -350,6 +376,10 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         ep_backward = 0.0
         ep_optimizer = 0.0
 
+        # Clipping tracking variables
+        num_clips = 0
+        total_clip_value = 0.0
+
         for batch_X, batch_y in train_loader:
             t0 = time.time()
             batch_load_start = time.time()
@@ -390,6 +420,13 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
             bwd_time = time.time() - t0
             ep_backward += bwd_time
 
+            # Adaptive gradient clipping
+            if use_adaptive_clipping:
+                clip_value = adaptive_grad_clip(model, percentile=grad_clip_percentile)
+                if clip_value is not None:
+                    num_clips += 1
+                    total_clip_value += clip_value
+
             # Optimizer
             t0 = time.time()
             opt_start = time.time()
@@ -409,8 +446,6 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         backward_times.append(ep_backward)
         optimizer_times.append(ep_optimizer)
 
-        if writer is not None:
-            log_feature_importance_to_tensorboard(writer, last_batch_X, last_attn, epoch)
 
         # --------------------------
         # VALIDATION LOOP
@@ -444,9 +479,26 @@ def train_model(X_train, y_train, X_val, y_val, input_size,
         # TENSORBOARD LOGGING
         # --------------------------
         if writer is not None:
+            log_feature_importance_to_tensorboard(writer, last_batch_X, last_attn, epoch)
             writer.add_scalar('Loss/train', avg_train_loss, epoch)
             writer.add_scalar('Loss/validation', avg_val_loss, epoch)
             writer.add_scalar('Learning_Rate', optimizer.param_groups[0]['lr'], epoch)
+
+            # Gradient clipping statistics
+            if num_clips > 0:
+                avg_clip_value = total_clip_value / num_clips
+                clip_rate = num_clips / len(train_loader)
+            else:
+                avg_clip_value = 0.0
+                clip_rate = 0.0
+
+            writer.add_scalar('Gradients/avg_clip_value', avg_clip_value, epoch)
+            writer.add_scalar('Gradients/clip_rate', clip_rate, epoch)
+
+            # Warning if clipping too frequently
+            if clip_rate > 0.8:
+                logging.warning(f"Epoch {epoch}: High clipping rate ({clip_rate:.1%}). "
+                                f"Adjust learning rate.")
 
         # --------------------------
         # CONSOLE LOGGING
